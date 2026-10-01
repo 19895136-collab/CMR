@@ -20,23 +20,53 @@
 import { useState, useEffect } from 'react';
 import { Venta, ProductoComida } from './types';
 import { cargarVentas, guardarVentas, cargarProductos, guardarProductos, formatearMoneda } from './utils/storage';
+import { 
+  inicializarSQLite, 
+  guardarVentaSQLite, 
+  leerVentasSQLite, 
+  borrarVentaSQLite, 
+  guardarProductoSQLite, 
+  leerProductosSQLite 
+} from './services/sqliteDb';
 import { ResumenVentas } from './components/ResumenVentas';
 import { ControlVentas } from './components/ControlVentas';
 import { AjustesRespaldo } from './components/AjustesRespaldo';
 import { 
   BarChart3, PlusCircle, History, 
-  ShieldCheck, ChefHat, Sparkles
+  ShieldCheck, ChefHat
 } from 'lucide-react';
 
 type TabActivo = 'resumen' | 'vender' | 'control' | 'respaldo';
 
 export default function App() {
-  // Inicialización perezosa (lazy init) para rendimiento óptimo
+  // Inicialización con cache local y sincronización con SQLite
   const [ventas, setVentas] = useState<Venta[]>(() => cargarVentas());
   const [productos, setProductos] = useState<ProductoComida[]>(() => cargarProductos());
   const [tabActivo, setTabActivo] = useState<TabActivo>('resumen');
 
-  // REQUISITO 3: Mantener los datos al cerrar o recargar la aplicación
+  // Cargar datos persistentes desde SQLite al iniciar la aplicación
+  useEffect(() => {
+    async function sincronizarSQLite() {
+      try {
+        await inicializarSQLite();
+        const ventasSql = await leerVentasSQLite();
+        const prodsSql = await leerProductosSQLite();
+        if (ventasSql.length > 0) {
+          setVentas(ventasSql);
+          guardarVentas(ventasSql);
+        }
+        if (prodsSql.length > 0) {
+          setProductos(prodsSql);
+          guardarProductos(prodsSql);
+        }
+      } catch (err) {
+        console.error('Error cargando SQLite:', err);
+      }
+    }
+    sincronizarSQLite();
+  }, []);
+
+  // Guardado de respaldo en localStorage
   useEffect(() => {
     guardarVentas(ventas);
   }, [ventas]);
@@ -58,27 +88,37 @@ export default function App() {
   });
   const totalHoy = ventasHoy.reduce((acc, curr) => acc + curr.total, 0);
 
-  // MANEJADORES DE ESTADO DE VENTAS
-  const handleAgregarVenta = (nuevaVenta: Venta) => {
+  // MANEJADORES DE ESTADO DE VENTAS CON SQLITE
+  const handleAgregarVenta = async (nuevaVenta: Venta) => {
     setVentas(prev => [nuevaVenta, ...prev]);
+    await guardarVentaSQLite(nuevaVenta);
   };
 
-  const handleEditarVenta = (ventaEditada: Venta) => {
+  const handleEditarVenta = async (ventaEditada: Venta) => {
     setVentas(prev => prev.map(v => (v.id === ventaEditada.id ? ventaEditada : v)));
+    await guardarVentaSQLite(ventaEditada);
   };
 
-  const handleEliminarVenta = (id: string) => {
+  const handleEliminarVenta = async (id: string) => {
     setVentas(prev => prev.filter(v => v.id !== id));
+    await borrarVentaSQLite(id);
   };
 
-  const handleRestablecerVentas = (nuevasVentas: Venta[]) => {
+  const handleRestablecerVentas = async (nuevasVentas: Venta[]) => {
     setVentas(nuevasVentas);
     guardarVentas(nuevasVentas);
+    for (const v of nuevasVentas) {
+      await guardarVentaSQLite(v, false);
+    }
+    await inicializarSQLite();
   };
 
-  const handleActualizarProductos = (nuevos: ProductoComida[]) => {
+  const handleActualizarProductos = async (nuevos: ProductoComida[]) => {
     setProductos(nuevos);
     guardarProductos(nuevos);
+    for (const p of nuevos) {
+      await guardarProductoSQLite(p, false);
+    }
   };
 
   return (

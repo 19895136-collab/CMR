@@ -15,11 +15,12 @@
 import React, { useRef, useState } from 'react';
 import { Venta, ProductoComida } from '../types';
 import { exportarRespaldoJSON, exportarVentasCSV, formatearMoneda } from '../utils/storage';
+import { exportarArchivoSQLite, importarArchivoSQLite, leerVentasSQLite } from '../services/sqliteDb';
 import { generarVentasEjemplo } from '../data/initialData';
 import { 
   Database, Download, Upload, FileSpreadsheet, 
   RotateCcw, Check, AlertTriangle, ShieldCheck, 
-  Plus, Trash2, Utensils
+  Plus, Trash2, Utensils, HardDrive
 } from 'lucide-react';
 
 interface AjustesRespaldoProps {
@@ -36,6 +37,7 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
   onActualizarProductos,
 }) => {
   const archivoInputRef = useRef<HTMLInputElement>(null);
+  const archivoSqliteInputRef = useRef<HTMLInputElement>(null);
   const [alerta, setAlerta] = useState<{ tipo: 'exito' | 'error'; mensaje: string } | null>(null);
 
   // Estados para nuevo producto en el catálogo de Mayeli
@@ -46,6 +48,20 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
   const mostrarMensaje = (tipo: 'exito' | 'error', mensaje: string) => {
     setAlerta({ tipo, mensaje });
     setTimeout(() => setAlerta(null), 4000);
+  };
+
+  const manejarImportacionSQLite = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo) return;
+    try {
+      await importarArchivoSQLite(archivo);
+      const ventasCargadas = await leerVentasSQLite();
+      onRestablecerVentas(ventasCargadas);
+      mostrarMensaje('exito', `¡Base de datos SQLite importada! (${ventasCargadas.length} ventas)`);
+    } catch {
+      mostrarMensaje('error', 'Error al leer el archivo .sqlite. Debe ser una base de datos SQLite válida.');
+    }
+    e.target.value = '';
   };
 
   // IMPORTAR RESPALDO JSON
@@ -162,7 +178,19 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           Copias de Seguridad y Reportes
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {/* Exportar SQLite (.sqlite) */}
+          <button
+            onClick={() => exportarArchivoSQLite()}
+            className="p-3.5 rounded-2xl border border-purple-300 bg-purple-50/70 hover:bg-purple-100/80 text-left flex items-center justify-between transition-all"
+          >
+            <div>
+              <span className="font-bold text-neutral-900 text-xs block">Exportar Base SQLite (.sqlite)</span>
+              <span className="text-[11px] text-purple-900">Archivo de base de datos relacional</span>
+            </div>
+            <HardDrive size={18} className="text-purple-700" />
+          </button>
+
           {/* Exportar JSON */}
           <button
             onClick={() => exportarRespaldoJSON(ventas)}
@@ -188,7 +216,7 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           </button>
         </div>
 
-        {/* Input oculto para importar */}
+        {/* Inputs ocultos para importar */}
         <input
           ref={archivoInputRef}
           type="file"
@@ -197,13 +225,29 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           className="hidden"
         />
 
+        <input
+          ref={archivoSqliteInputRef}
+          type="file"
+          accept=".sqlite,.db"
+          onChange={manejarImportacionSQLite}
+          className="hidden"
+        />
+
         <div className="pt-2 flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={() => archivoSqliteInputRef.current?.click()}
+            className="flex-1 py-2.5 px-3 bg-purple-950 hover:bg-purple-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-purple-700"
+          >
+            <HardDrive size={14} className="text-purple-300" />
+            <span>Restaurar Archivo .SQLite</span>
+          </button>
+
           <button
             onClick={() => archivoInputRef.current?.click()}
             className="flex-1 py-2.5 px-3 bg-neutral-950 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-purple-900/60"
           >
             <Upload size={14} className="text-purple-400" />
-            <span>Restaurar Copia desde Archivo</span>
+            <span>Restaurar Copia JSON</span>
           </button>
 
           <button
