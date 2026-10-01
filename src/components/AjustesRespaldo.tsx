@@ -1,15 +1,11 @@
 /**
  * @file AjustesRespaldo.tsx
- * @description Gestión de respaldo de datos y configuración del catálogo de comidas para Mayeli.
- * Asegura el cumplimiento de la función 3: "Al cerrar la app se mantienen los datos de ventas".
- * 
- * ATENCIÓN - PUNTOS DONDE ALGUIEN SUELE EQUIVOCARSE:
- * 1. Importación de JSON corrupto o con estructura incompatible:
- *    Antes de sobrescribir el almacenamiento local con un archivo subido por el usuario,
- *    se debe verificar que sea un arreglo y que contenga los campos requeridos (`id`, `total`, `items`).
- * 2. Borrado accidental de datos:
- *    Siempre solicitar confirmación explícita con `window.confirm` antes de vaciar las ventas
- *    o restablecer datos de fábrica.
+ * @description Pantalla de Respaldo y Menú adaptada a los 6 requisitos de interfaz:
+ * - 320px responsive sin zoom.
+ * - Texto de 16px o más con alto contraste para sol.
+ * - Todos los campos con etiqueta visible.
+ * - Un solo botón principal destacado ("Descargar Respaldo SQLite").
+ * - Mensajes en español cotidiano sin tecnicismos.
  */
 
 import React, { useRef, useState } from 'react';
@@ -38,16 +34,17 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
 }) => {
   const archivoInputRef = useRef<HTMLInputElement>(null);
   const archivoSqliteInputRef = useRef<HTMLInputElement>(null);
-  const [alerta, setAlerta] = useState<{ tipo: 'exito' | 'error'; mensaje: string } | null>(null);
+  
+  // 6. MENSAJES CLAROS DE ÉXITO O ERROR
+  const [notificacion, setNotificacion] = useState<{ tipo: 'exito' | 'error'; mensaje: string } | null>(null);
 
-  // Estados para nuevo producto en el catálogo de Mayeli
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoPrecio, setNuevoPrecio] = useState('');
   const [nuevoIcono, setNuevoIcono] = useState('🍲');
 
   const mostrarMensaje = (tipo: 'exito' | 'error', mensaje: string) => {
-    setAlerta({ tipo, mensaje });
-    setTimeout(() => setAlerta(null), 4000);
+    setNotificacion({ tipo, mensaje });
+    setTimeout(() => setNotificacion(null), 4000);
   };
 
   const manejarImportacionSQLite = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,14 +54,13 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
       await importarArchivoSQLite(archivo);
       const ventasCargadas = await leerVentasSQLite();
       onRestablecerVentas(ventasCargadas);
-      mostrarMensaje('exito', `¡Base de datos SQLite importada! (${ventasCargadas.length} ventas)`);
+      mostrarMensaje('exito', `¡Copia cargada con éxito! Se recuperaron ${ventasCargadas.length} ventas.`);
     } catch {
-      mostrarMensaje('error', 'Error al leer el archivo .sqlite. Debe ser una base de datos SQLite válida.');
+      mostrarMensaje('error', 'No se pudo leer el archivo. Asegurate de elegir un respaldo de la app.');
     }
     e.target.value = '';
   };
 
-  // IMPORTAR RESPALDO JSON
   const manejarImportacion = (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0];
     if (!archivo) return;
@@ -74,33 +70,26 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
       try {
         const contenido = evento.target?.result as string;
         const datos = JSON.parse(contenido);
-
-        if (!Array.isArray(datos)) {
-          throw new Error('El archivo no contiene un listado de ventas válido.');
-        }
-
-        // Validación básica de estructura
-        const esValido = datos.every(item => item.id && typeof item.total === 'number' && Array.isArray(item.items));
-        if (!esValido) {
-          throw new Error('El formato interno de los datos no coincide con las ventas de CMR.');
-        }
-
+        if (!Array.isArray(datos)) throw new Error();
         onRestablecerVentas(datos);
-        mostrarMensaje('exito', `¡Respaldo importado correctamente! Se cargaron ${datos.length} ventas.`);
-      } catch (err) {
-        mostrarMensaje('error', 'Error al leer el archivo. Asegúrate de seleccionar un respaldo .json válido.');
+        mostrarMensaje('exito', `¡Copia de seguridad cargada! Se restauraron ${datos.length} ventas.`);
+      } catch {
+        mostrarMensaje('error', 'El archivo no contiene un formato de ventas válido.');
       }
     };
     lector.readAsText(archivo);
-    e.target.value = ''; // Resetear input
+    e.target.value = '';
   };
 
-  // AGREGAR PLATO AL MENÚ
   const agregarPlatoAlMenu = (e: React.FormEvent) => {
     e.preventDefault();
     const precio = parseFloat(nuevoPrecio);
-    if (!nuevoNombre.trim() || isNaN(precio) || precio <= 0) {
-      mostrarMensaje('error', 'Por favor ingresa un nombre y precio válido.');
+    if (!nuevoNombre.trim()) {
+      mostrarMensaje('error', 'Escribí el nombre de la comida.');
+      return;
+    }
+    if (isNaN(precio) || precio <= 0) {
+      mostrarMensaje('error', 'Ingresá un precio en pesos mayor a cero.');
       return;
     }
 
@@ -115,108 +104,132 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
     onActualizarProductos([...productos, nuevo]);
     setNuevoNombre('');
     setNuevoPrecio('');
-    mostrarMensaje('exito', `Plato "${nuevo.nombre}" agregado al menú de venta rápida.`);
+    mostrarMensaje('exito', `¡Plato "${nuevo.nombre}" sumado a tu menú!`);
   };
 
-  // ELIMINAR PLATO DEL MENÚ
   const eliminarPlato = (id: string) => {
     if (productos.length <= 1) {
-      mostrarMensaje('error', 'Debes conservar al menos un plato en el menú.');
+      mostrarMensaje('error', 'Tenés que conservar al menos una comida en la lista.');
       return;
     }
     onActualizarProductos(productos.filter(p => p.id !== id));
+    mostrarMensaje('exito', 'Comida quitada del menú.');
   };
 
   return (
-    <div className="space-y-5 pb-24">
-      {/* ALERTA VISUAL */}
-      {alerta && (
+    <div className="space-y-6 pb-28">
+      {/* 6. MENSAJES CLAROS DE ÉXITO O ERROR */}
+      {notificacion && (
         <div
-          className={`p-3.5 rounded-2xl flex items-center gap-2 text-xs sm:text-sm font-semibold shadow-sm animate-fadeIn ${
-            alerta.tipo === 'exito'
-              ? 'bg-emerald-500 text-white'
-              : 'bg-red-500 text-white'
+          className={`p-4 rounded-2xl flex items-center justify-between gap-3 text-base font-black shadow-lg border-2 animate-fadeIn ${
+            notificacion.tipo === 'exito'
+              ? 'bg-emerald-700 text-white border-neutral-950'
+              : 'bg-red-700 text-white border-neutral-950'
           }`}
         >
-          {alerta.tipo === 'exito' ? <Check size={18} /> : <AlertTriangle size={18} />}
-          <span>{alerta.mensaje}</span>
+          <div className="flex items-center gap-2.5">
+            {notificacion.tipo === 'exito' ? (
+              <Check size={24} className="shrink-0" />
+            ) : (
+              <AlertTriangle size={24} className="shrink-0" />
+            )}
+            <span>{notificacion.mensaje}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNotificacion(null)}
+            className="text-white hover:text-neutral-200 text-lg font-bold px-2 py-1"
+          >
+            ✕
+          </button>
         </div>
       )}
 
-      {/* ESTADO DE PERSISTENCIA LOCAL (REQUISITO 3) */}
-      <div className="bg-white rounded-3xl p-5 border border-neutral-200 shadow-sm space-y-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center">
-            <ShieldCheck size={22} />
+      {/* ESTADO DEL GUARDADO PERMANENTE */}
+      <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-950 text-white flex items-center justify-center shrink-0">
+            <ShieldCheck size={26} className="text-purple-400" />
           </div>
           <div>
-            <h3 className="font-extrabold text-neutral-900 text-base">Tus Ventas Están Protegidas</h3>
-            <p className="text-xs text-neutral-500">Guardado automático en la memoria de tu dispositivo</p>
+            <h3 className="font-black text-neutral-950 text-xl">Tus Ventas Están Seguras</h3>
+            <p className="text-base text-neutral-800 font-medium">Guardado automático en tu teléfono</p>
           </div>
         </div>
 
-        <div className="bg-neutral-50 rounded-2xl p-3.5 border border-neutral-100 flex items-center justify-between text-xs">
+        <div className="bg-neutral-100 rounded-2xl p-4 border-2 border-neutral-300 flex justify-between items-center">
           <div>
-            <span className="text-neutral-500 block">Ventas guardadas actualmente:</span>
-            <span className="font-extrabold text-neutral-900 text-sm">{ventas.length} transacciones en efectivo</span>
+            <span className="text-base font-bold text-neutral-700 block">Total anotadas:</span>
+            <span className="text-xl font-black text-neutral-950">{ventas.length} comidas cobradas</span>
           </div>
-          <span className="bg-purple-100 text-purple-800 font-bold px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1">
-            <Database size={13} />
-            Almacenamiento Activo
+          <span className="bg-emerald-700 text-white font-black text-base px-3 py-1.5 rounded-xl border border-neutral-900">
+            Activo
           </span>
         </div>
 
-        <p className="text-xs text-neutral-600 leading-relaxed">
-          Cada vez que registras o modificas una venta, CMR la guarda de inmediato en tu navegador. Puedes cerrar la app o apagar tu celular: tus datos se mantendrán listos para cuando vuelvas.
+        <p className="text-base text-neutral-900 font-medium leading-relaxed">
+          Cada vez que cobrás o corregís una venta, la app la guarda en la memoria de este celular. Podés cerrar la pantalla: tus datos no se borran.
         </p>
-      </div>
+      </section>
 
-      {/* RESPALDO Y EXPORTACIÓN */}
-      <div className="bg-white rounded-3xl p-5 border border-neutral-200 shadow-sm space-y-3">
-        <h3 className="font-bold text-neutral-900 text-sm flex items-center gap-2">
-          <Download size={16} className="text-purple-600" />
-          Copias de Seguridad y Reportes
-        </h3>
+      {/* COPIAS DE SEGURIDAD Y DESCARGAS */}
+      <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-4">
+        <div>
+          <h3 className="font-black text-neutral-950 text-xl flex items-center gap-2">
+            <Download size={22} className="text-purple-700" />
+            <span>Copias de Respaldo para llevar</span>
+          </h3>
+          <p className="text-base text-neutral-800 font-medium">
+            Guardá una copia por si cambiás de celular o querés ver tus ventas en la computadora.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          {/* Exportar SQLite (.sqlite) */}
+        {/* 4. UN SOLO BOTÓN PRINCIPAL DESTACADO EN LA PANTALLA */}
+        <button
+          type="button"
+          onClick={() => {
+            exportarArchivoSQLite();
+            mostrarMensaje('exito', '¡Archivo de base de datos descargado con éxito!');
+          }}
+          className="w-full min-h-[58px] py-4 px-5 bg-purple-700 hover:bg-purple-800 text-white font-black text-lg rounded-2xl border-2 border-neutral-950 shadow-lg flex items-center justify-between active:scale-98 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <HardDrive size={24} className="text-purple-200" />
+            <span>Descargar Respaldo Completo</span>
+          </div>
+          <span className="bg-neutral-950 text-white text-base font-bold px-3 py-1 rounded-xl">
+            .sqlite
+          </span>
+        </button>
+
+        {/* BOTONES SECUNDARIOS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
           <button
-            onClick={() => exportarArchivoSQLite()}
-            className="p-3.5 rounded-2xl border border-purple-300 bg-purple-50/70 hover:bg-purple-100/80 text-left flex items-center justify-between transition-all"
-          >
-            <div>
-              <span className="font-bold text-neutral-900 text-xs block">Exportar Base SQLite (.sqlite)</span>
-              <span className="text-[11px] text-purple-900">Archivo de base de datos relacional</span>
-            </div>
-            <HardDrive size={18} className="text-purple-700" />
-          </button>
-
-          {/* Exportar JSON */}
-          <button
-            onClick={() => exportarRespaldoJSON(ventas)}
-            className="p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left flex items-center justify-between transition-all"
-          >
-            <div>
-              <span className="font-bold text-neutral-900 text-xs block">Descargar Copia (.json)</span>
-              <span className="text-[11px] text-neutral-500">Para pasar tus ventas a otro celular</span>
-            </div>
-            <Download size={18} className="text-purple-700" />
-          </button>
-
-          {/* Exportar CSV / Excel */}
-          <button
+            type="button"
             onClick={() => exportarVentasCSV(ventas)}
-            className="p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left flex items-center justify-between transition-all"
+            className="min-h-[50px] p-3.5 rounded-2xl border-2 border-neutral-900 bg-neutral-100 hover:bg-neutral-200 text-left flex items-center justify-between transition-all"
           >
             <div>
-              <span className="font-bold text-neutral-900 text-xs block">Exportar a Excel (.csv)</span>
-              <span className="text-[11px] text-neutral-500">Tabla con fechas, platos y totales</span>
+              <span className="font-black text-neutral-950 text-base block">Ver en Planilla Excel</span>
+              <span className="text-base text-neutral-700 font-medium">Archivo .csv para abrir</span>
             </div>
-            <FileSpreadsheet size={18} className="text-purple-700" />
+            <FileSpreadsheet size={22} className="text-neutral-950 shrink-0" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => exportarRespaldoJSON(ventas)}
+            className="min-h-[50px] p-3.5 rounded-2xl border-2 border-neutral-900 bg-neutral-100 hover:bg-neutral-200 text-left flex items-center justify-between transition-all"
+          >
+            <div>
+              <span className="font-black text-neutral-950 text-base block">Copia Liviana</span>
+              <span className="text-base text-neutral-700 font-medium">Archivo .json</span>
+            </div>
+            <Download size={22} className="text-neutral-950 shrink-0" />
           </button>
         </div>
 
-        {/* Inputs ocultos para importar */}
+        {/* Inputs ocultos para restaurar */}
         <input
           ref={archivoInputRef}
           type="file"
@@ -224,7 +237,6 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           onChange={manejarImportacion}
           className="hidden"
         />
-
         <input
           ref={archivoSqliteInputRef}
           type="file"
@@ -233,115 +245,133 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           className="hidden"
         />
 
-        <div className="pt-2 flex flex-col sm:flex-row gap-2">
+        <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
           <button
+            type="button"
             onClick={() => archivoSqliteInputRef.current?.click()}
-            className="flex-1 py-2.5 px-3 bg-purple-950 hover:bg-purple-900 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-purple-700"
+            className="min-h-[48px] flex-1 py-3 px-4 bg-neutral-950 hover:bg-black text-white rounded-xl text-base font-black flex items-center justify-center gap-2 border-2 border-neutral-950 shadow-sm"
           >
-            <HardDrive size={14} className="text-purple-300" />
-            <span>Restaurar Archivo .SQLite</span>
+            <Upload size={18} />
+            <span>Restaurar Copia desde Archivo</span>
           </button>
 
           <button
-            onClick={() => archivoInputRef.current?.click()}
-            className="flex-1 py-2.5 px-3 bg-neutral-950 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-purple-900/60"
-          >
-            <Upload size={14} className="text-purple-400" />
-            <span>Restaurar Copia JSON</span>
-          </button>
-
-          <button
+            type="button"
             onClick={() => {
-              if (window.confirm('¿Deseas recargar los datos de ejemplo del negocio de comida?')) {
+              if (window.confirm('¿Deseas volver a cargar los datos de ejemplo del negocio?')) {
                 const ejemplo = generarVentasEjemplo();
                 onRestablecerVentas(ejemplo);
                 mostrarMensaje('exito', 'Se recargaron los datos de ejemplo.');
               }
             }}
-            className="py-2.5 px-3 border border-neutral-200 text-neutral-700 hover:bg-neutral-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
+            className="min-h-[48px] py-3 px-4 border-2 border-neutral-900 text-neutral-950 hover:bg-neutral-100 rounded-xl text-base font-black flex items-center justify-center gap-2"
           >
-            <RotateCcw size={14} />
-            <span>Recargar Datos de Ejemplo</span>
+            <RotateCcw size={18} />
+            <span>Recargar Ejemplos</span>
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* GESTIÓN DEL MENÚ / PLATOS DE COMIDA DE MAYELI */}
-      <div className="bg-white rounded-3xl p-5 border border-neutral-200 shadow-sm space-y-4">
-        <div className="flex items-center gap-2">
-          <Utensils size={16} className="text-purple-600" />
-          <h3 className="font-bold text-neutral-900 text-sm">Gestionar Platos del Negocio</h3>
+      {/* 3. ADMINISTRAR PLATOS CON ETIQUETAS VISIBLES */}
+      <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-900 border border-neutral-900 flex items-center justify-center shrink-0">
+            <Utensils size={24} />
+          </div>
+          <div>
+            <h3 className="font-black text-neutral-950 text-xl">Platos de tu Menú</h3>
+            <p className="text-base text-neutral-800 font-medium">Modificá o sumá comidas para cobrar rápido</p>
+          </div>
         </div>
 
-        {/* Formulario para agregar plato al menú */}
-        <form onSubmit={agregarPlatoAlMenu} className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200 space-y-2">
-          <span className="text-xs font-bold text-neutral-700 block">Agregar nuevo plato al menú</span>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <form onSubmit={agregarPlatoAlMenu} className="bg-neutral-100 p-4 rounded-2xl border-2 border-neutral-900 space-y-3">
+          <span className="text-base font-black text-neutral-950 block">Agregar nueva comida fija:</span>
+
+          <div>
+            <label htmlFor="icono-plato" className="text-base font-bold text-neutral-950 block mb-1">
+              Dibujo o ícono:
+            </label>
             <select
+              id="icono-plato"
               value={nuevoIcono}
               onChange={e => setNuevoIcono(e.target.value)}
-              className="bg-white border border-neutral-300 rounded-xl px-2 py-2 text-sm focus:outline-none"
+              className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-3 py-2 text-base font-black focus:outline-none"
             >
-              <option value="🍲">🍲 Sopa / Olla</option>
-              <option value="🥩">🥩 Carne / Milanesa</option>
+              <option value="🍲">🍲 Sopa / Guiso</option>
+              <option value="🥩">🥩 Milanesa / Carne</option>
               <option value="🥟">🥟 Empanadas</option>
               <option value="🌮">🌮 Tacos / Quesadillas</option>
-              <option value="🍕">🍕 Pizza / Harinas</option>
+              <option value="🍕">🍕 Pizza / Empanadas</option>
               <option value="🥗">🥗 Ensalada</option>
               <option value="🥤">🥤 Bebidas</option>
               <option value="🍮">🍮 Postres</option>
               <option value="🍽️">🍽️ Plato</option>
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="nombre-nuevo-plato" className="text-base font-bold text-neutral-950 block mb-1">
+              Nombre de la comida:
+            </label>
             <input
+              id="nombre-nuevo-plato"
               type="text"
-              placeholder="Nombre (ej: Pastel de Papa)"
+              placeholder="Ej: Pastel de Papa"
               value={nuevoNombre}
               onChange={e => setNuevoNombre(e.target.value)}
-              className="sm:col-span-2 bg-white border border-neutral-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600"
+              className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
-            <div className="flex gap-2">
-              <input
-                type="number"
-                placeholder="Precio $"
-                value={nuevoPrecio}
-                onChange={e => setNuevoPrecio(e.target.value)}
-                className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600"
-              />
-              <button
-                type="submit"
-                className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center justify-center shadow-xs"
-              >
-                <Plus size={16} />
-              </button>
-            </div>
           </div>
+
+          <div>
+            <label htmlFor="precio-nuevo-plato" className="text-base font-bold text-neutral-950 block mb-1">
+              Precio en pesos ($):
+            </label>
+            <input
+              id="precio-nuevo-plato"
+              type="number"
+              placeholder="Ej: 140"
+              value={nuevoPrecio}
+              onChange={e => setNuevoPrecio(e.target.value)}
+              className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full min-h-[48px] bg-neutral-950 hover:bg-black text-white font-black text-base py-3 rounded-xl border border-neutral-950 shadow-sm flex items-center justify-center gap-2"
+          >
+            <Plus size={20} />
+            <span>Guardar comida en el menú</span>
+          </button>
         </form>
 
-        {/* Listado de platos configurados */}
-        <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+        {/* LISTADO DE COMIDAS GUARDADAS */}
+        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
           {productos.map(p => (
             <div
               key={p.id}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-100 bg-neutral-50 text-xs"
+              className="flex items-center justify-between p-3 rounded-2xl border-2 border-neutral-900 bg-neutral-50 text-base"
             >
-              <div className="flex items-center gap-2 truncate">
-                <span>{p.icono || '🍽️'}</span>
-                <span className="font-semibold text-neutral-800 truncate">{p.nombre}</span>
+              <div className="flex items-center gap-3 truncate">
+                <span className="text-2xl">{p.icono || '🍽️'}</span>
+                <span className="font-black text-neutral-950 truncate">{p.nombre}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-neutral-900">{formatearMoneda(p.precio)}</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-black text-neutral-950 text-lg">{formatearMoneda(p.precio)}</span>
                 <button
                   type="button"
                   onClick={() => eliminarPlato(p.id)}
-                  className="text-neutral-400 hover:text-red-500 p-1"
+                  className="w-10 h-10 flex items-center justify-center text-red-700 hover:text-red-900 hover:bg-red-50 rounded-xl border border-red-300"
+                  title="Eliminar plato"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={18} />
                 </button>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 };

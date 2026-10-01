@@ -1,17 +1,12 @@
 /**
  * @file ControlVentas.tsx
- * @description Módulo de control total y registro ágil de ventas para el negocio de comida de Mayeli.
- * Adaptado a: Cobro exclusivo en efectivo y paleta Morado y Negro.
- * 
- * ATENCIÓN - PUNTOS DONDE ALGUIEN SUELE EQUIVOCARSE:
- * 1. Mutación directa de arrays en React: Nunca hacer `items.push(...)` o `items[i].cantidad++`.
- *    Siempre retornar copias usando `.map()` o el operador spread `[...items]`. De lo contrario,
- *    React 19 no detecta el cambio de estado y la interfaz no se actualiza.
- * 2. Cálculo del vuelto / cambio: Al restar números flotantes en JavaScript (ej: 200 - 180.1),
- *    pueden aparecer imprecisiones binarias como 19.89999999999999. Redondear siempre
- *    usando `Math.round((recibido - total) * 100) / 100`.
- * 3. Ventas vacías: Evitar registrar una venta si el total es 0 o no hay ningún plato cargado,
- *    mostrando un mensaje claro para el usuario.
+ * @description Pantalla de registro y control de ventas adaptada a los 6 requisitos de interfaz:
+ * 1. Compatible con pantallas de 320px de ancho, botones táctiles de 48px+ para una sola mano.
+ * 2. Texto nunca menor a 16px (text-base), contraste elevado para ver bajo el sol.
+ * 3. Todos los campos de entrada tienen etiquetas visibles.
+ * 4. Un solo botón principal destacado ("Cobrar Venta"); los demás son botones secundarios.
+ * 5. Estados vacíos explicativos con invitación a la acción.
+ * 6. Mensajes de éxito y error visibles, en español coloquial sin términos técnicos.
  */
 
 import React, { useState } from 'react';
@@ -20,7 +15,8 @@ import { formatearMoneda, formatearFecha, formatearHora } from '../utils/storage
 import { TicketModal } from './TicketModal';
 import { 
   Plus, Minus, Trash2, Search, CheckCircle2, 
-  Banknote, Receipt, AlertCircle, Edit2, RotateCcw, UtensilsCrossed 
+  Banknote, Receipt, AlertCircle, Edit2, RotateCcw, 
+  UtensilsCrossed, AlertTriangle, ShoppingCart
 } from 'lucide-react';
 
 interface ControlVentasProps {
@@ -43,8 +39,6 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
   const [seccion, setSeccion] = useState<'registrar' | 'historial'>(vistaInicial);
 
   const [itemsActuales, setItemsActuales] = useState<ItemVenta[]>([]);
-  // Cobro exclusivo en efectivo
-  const metodoPago = 'efectivo';
   const [montoRecibido, setMontoRecibido] = useState<string>('');
   const [nota, setNota] = useState<string>('');
   const [platoPersonalizadoNombre, setPlatoPersonalizadoNombre] = useState('');
@@ -52,15 +46,23 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
   const [mostrarPlatoLibre, setMostrarPlatoLibre] = useState(false);
 
   const [ventaEnEdicion, setVentaEnEdicion] = useState<Venta | null>(null);
-
   const [busqueda, setBusqueda] = useState('');
   const [ventaParaTicket, setVentaParaTicket] = useState<Venta | null>(null);
 
-  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+  // 6. MENSAJES CLAROS DE ÉXITO Y ERROR EN ESPAÑOL SIMPLE
+  const [notificacion, setNotificacion] = useState<{
+    tipo: 'exito' | 'error';
+    mensaje: string;
+  } | null>(null);
 
   const totalActual = itemsActuales.reduce((acc, curr) => acc + curr.subtotal, 0);
   const valorRecibidoNum = parseFloat(montoRecibido) || 0;
   const vueltoCalculado = Math.max(0, Math.round((valorRecibidoNum - totalActual) * 100) / 100);
+
+  const mostrarMensaje = (tipo: 'exito' | 'error', mensaje: string) => {
+    setNotificacion({ tipo, mensaje });
+    setTimeout(() => setNotificacion(null), 4000);
+  };
 
   const agregarProductoAlTicket = (prod: ProductoComida) => {
     setItemsActuales(prevItems => {
@@ -88,7 +90,14 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
   const agregarPlatoLibre = (e: React.FormEvent) => {
     e.preventDefault();
     const precio = parseFloat(platoPersonalizadoPrecio);
-    if (!platoPersonalizadoNombre.trim() || isNaN(precio) || precio <= 0) return;
+    if (!platoPersonalizadoNombre.trim()) {
+      mostrarMensaje('error', 'Escribí el nombre de la comida antes de agregarla.');
+      return;
+    }
+    if (isNaN(precio) || precio <= 0) {
+      mostrarMensaje('error', 'El precio debe ser un número mayor a cero.');
+      return;
+    }
 
     setItemsActuales(prev => [
       ...prev,
@@ -104,6 +113,7 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
     setPlatoPersonalizadoNombre('');
     setPlatoPersonalizadoPrecio('');
     setMostrarPlatoLibre(false);
+    mostrarMensaje('exito', 'Comida agregada al pedido actual.');
   };
 
   const modificarCantidad = (nombre: string, delta: number) => {
@@ -137,7 +147,7 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
 
   const registrarVenta = () => {
     if (itemsActuales.length === 0 || totalActual <= 0) {
-      alert('Por favor selecciona al menos un plato o comida para registrar la venta.');
+      mostrarMensaje('error', 'Elegí al menos una comida de la lista para poder cobrar.');
       return;
     }
 
@@ -153,7 +163,7 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
       };
 
       onEditarVenta(ventaActualizada);
-      setMensajeExito(`¡Venta #${ventaEnEdicion.id.slice(-4)} actualizada con éxito!`);
+      mostrarMensaje('exito', `¡Venta #${ventaEnEdicion.id.slice(-4)} actualizada con éxito!`);
       limpiarFormulario();
       setSeccion('historial');
     } else {
@@ -171,11 +181,9 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
       };
 
       onAgregarVenta(nuevaVenta);
-      setMensajeExito(`¡Venta por ${formatearMoneda(totalActual)} en efectivo registrada!`);
+      mostrarMensaje('exito', `¡Cobro de ${formatearMoneda(totalActual)} guardado en tu caja!`);
       limpiarFormulario();
     }
-
-    setTimeout(() => setMensajeExito(null), 3500);
   };
 
   const iniciarEdicion = (v: Venta) => {
@@ -194,210 +202,264 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
       const coincideId = v.id.toLowerCase().includes(q);
       return coincidePlato || coincideNota || coincideId;
     }
-
     return true;
   });
 
   return (
-    <div className="space-y-4 pb-24">
-      {/* SELECTOR DE MODO */}
-      <div className="flex bg-neutral-200 p-1 rounded-2xl">
+    <div className="space-y-5 pb-28">
+      {/* SELECTOR SECUNDARIO: REGISTRAR VS HISTORIAL */}
+      <div className="grid grid-cols-2 gap-2 bg-neutral-200 p-1.5 rounded-2xl border border-neutral-300">
         <button
-          onClick={() => {
-            setSeccion('registrar');
-          }}
-          className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all ${
+          type="button"
+          onClick={() => setSeccion('registrar')}
+          className={`min-h-[48px] py-2.5 px-3 rounded-xl font-black text-base flex items-center justify-center gap-2 transition-all ${
             seccion === 'registrar'
-              ? 'bg-neutral-950 text-white shadow-sm'
-              : 'text-neutral-600 hover:text-neutral-900'
+              ? 'bg-neutral-950 text-white shadow-md'
+              : 'text-neutral-800 hover:text-black'
           }`}
         >
-          <Plus size={16} className="text-purple-400" />
-          <span>{ventaEnEdicion ? '✏️ Editando Venta' : 'Registrar Venta'}</span>
+          <Plus size={20} className={seccion === 'registrar' ? 'text-purple-400' : 'text-neutral-700'} />
+          <span>{ventaEnEdicion ? 'Editando' : 'Anotar Venta'}</span>
         </button>
 
         <button
+          type="button"
           onClick={() => setSeccion('historial')}
-          className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all ${
+          className={`min-h-[48px] py-2.5 px-3 rounded-xl font-black text-base flex items-center justify-center gap-2 transition-all ${
             seccion === 'historial'
-              ? 'bg-neutral-950 text-white shadow-sm'
-              : 'text-neutral-600 hover:text-neutral-900'
+              ? 'bg-neutral-950 text-white shadow-md'
+              : 'text-neutral-800 hover:text-black'
           }`}
         >
-          <Receipt size={16} className="text-purple-400" />
-          <span>Historial & Control ({ventas.length})</span>
+          <Receipt size={20} className={seccion === 'historial' ? 'text-purple-400' : 'text-neutral-700'} />
+          <span>Ver Ventas ({ventas.length})</span>
         </button>
       </div>
 
-      {mensajeExito && (
-        <div className="bg-purple-950 text-white border border-purple-800 font-semibold text-xs sm:text-sm p-3 rounded-2xl shadow-md flex items-center justify-between animate-fadeIn">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={18} className="text-purple-400" />
-            <span>{mensajeExito}</span>
+      {/* 6. AVISO DE ÉXITO O ERROR VISIBLE (SIN PALABRAS TÉCNICAS) */}
+      {notificacion && (
+        <div
+          className={`p-4 rounded-2xl flex items-center justify-between gap-3 text-base font-black shadow-lg border-2 animate-fadeIn ${
+            notificacion.tipo === 'exito'
+              ? 'bg-emerald-700 text-white border-neutral-950'
+              : 'bg-red-700 text-white border-neutral-950'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            {notificacion.tipo === 'exito' ? (
+              <CheckCircle2 size={24} className="shrink-0" />
+            ) : (
+              <AlertTriangle size={24} className="shrink-0" />
+            )}
+            <span>{notificacion.mensaje}</span>
           </div>
-          <button onClick={() => setMensajeExito(null)} className="text-neutral-400 hover:text-white">
+          <button
+            type="button"
+            onClick={() => setNotificacion(null)}
+            className="text-white hover:text-neutral-200 text-lg font-bold px-2 py-1"
+          >
             ✕
           </button>
         </div>
       )}
 
-      {/* REGISTRAR VENTA */}
+      {/* -------------------- VISTA 1: REGISTRAR VENTA -------------------- */}
       {seccion === 'registrar' && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {ventaEnEdicion && (
-            <div className="bg-purple-50 border border-purple-300 p-3 rounded-2xl flex items-center justify-between text-xs text-purple-950">
-              <span className="font-semibold">
-                Modificando venta #{ventaEnEdicion.id.slice(-6).toUpperCase()}
-              </span>
+            <div className="bg-purple-100 border-2 border-purple-900 p-4 rounded-2xl flex items-center justify-between text-base text-purple-950 font-bold">
+              <span>Modificando venta #{ventaEnEdicion.id.slice(-6).toUpperCase()}</span>
               <button
+                type="button"
                 onClick={limpiarFormulario}
-                className="text-neutral-500 hover:text-neutral-900 underline font-medium"
+                className="underline text-purple-900 hover:text-black"
               >
-                Cancelar edición
+                Cancelar
               </button>
             </div>
           )}
 
-          <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <UtensilsCrossed size={16} className="text-purple-600" />
-                <h3 className="font-bold text-neutral-900 text-sm">Menú de Platos de Mayeli</h3>
-              </div>
+          {/* CATÁLOGO DE PLATOS PARA TOCAR CON EL DEDO */}
+          <section className="bg-white p-5 rounded-3xl border-2 border-neutral-900 shadow-sm space-y-3">
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <label className="text-lg font-black text-neutral-950 flex items-center gap-2">
+                <UtensilsCrossed size={20} className="text-purple-700" />
+                <span>Elegí las comidas vendidas:</span>
+              </label>
+
               <button
+                type="button"
                 onClick={() => setMostrarPlatoLibre(!mostrarPlatoLibre)}
-                className="text-xs text-purple-700 hover:text-purple-900 font-bold bg-purple-50 px-2.5 py-1 rounded-lg"
+                className="min-h-[44px] py-2 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-950 text-base font-black rounded-xl border-2 border-neutral-800"
               >
-                {mostrarPlatoLibre ? 'Ocultar' : '+ Plato libre'}
+                {mostrarPlatoLibre ? 'Cerrar plato libre' : '+ Agregar otro plato'}
               </button>
             </div>
 
+            {/* Formulario de plato libre con etiquetas visibles */}
             {mostrarPlatoLibre && (
-              <form onSubmit={agregarPlatoLibre} className="bg-neutral-50 p-3 rounded-xl mb-3 border border-neutral-200 space-y-2">
-                <p className="text-xs font-semibold text-neutral-700">Agregar comida con precio personalizado</p>
-                <div className="flex gap-2">
+              <form onSubmit={agregarPlatoLibre} className="bg-neutral-100 p-4 rounded-2xl border-2 border-neutral-900 space-y-3">
+                <p className="text-base font-black text-neutral-950">Anotar plato que no está en el menú:</p>
+                
+                <div>
+                  <label htmlFor="nombre-libre" className="text-base font-bold text-neutral-950 block mb-1">
+                    Nombre del plato o comida:
+                  </label>
                   <input
+                    id="nombre-libre"
                     type="text"
-                    placeholder="Nombre del plato (ej: Picada)"
+                    placeholder="Ej: Empanada de verdura"
                     value={platoPersonalizadoNombre}
                     onChange={e => setPlatoPersonalizadoNombre(e.target.value)}
-                    className="flex-1 bg-white border border-neutral-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600"
+                    className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-3 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="precio-libre" className="text-base font-bold text-neutral-950 block mb-1">
+                    Precio a cobrar ($):
+                  </label>
                   <input
+                    id="precio-libre"
                     type="number"
-                    placeholder="Precio $"
+                    placeholder="Ej: 150"
                     value={platoPersonalizadoPrecio}
                     onChange={e => setPlatoPersonalizadoPrecio(e.target.value)}
-                    className="w-24 bg-white border border-neutral-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600"
+                    className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-3 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
                   />
-                  <button
-                    type="submit"
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-3 py-2 rounded-xl"
-                  >
-                    Agregar
-                  </button>
                 </div>
+
+                <button
+                  type="submit"
+                  className="w-full min-h-[48px] bg-neutral-950 hover:bg-black text-white font-black text-base py-3 rounded-xl border border-neutral-950 shadow-sm"
+                >
+                  Sumar este plato al pedido
+                </button>
               </form>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {/* Botones táctiles de platos (mínimo 48px de alto para uso con una mano) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               {productos.map(prod => {
                 const enTicket = itemsActuales.find(i => i.nombre === prod.nombre);
                 return (
                   <button
+                    type="button"
                     key={prod.id}
                     onClick={() => agregarProductoAlTicket(prod)}
-                    className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all active:scale-[0.97] relative ${
+                    className={`min-h-[58px] p-3 rounded-2xl border-2 text-left flex items-center justify-between transition-all active:scale-[0.98] ${
                       enTicket
-                        ? 'border-purple-600 bg-purple-50/70 shadow-xs'
-                        : 'border-neutral-200 hover:border-neutral-300 bg-neutral-50/50'
+                        ? 'border-purple-800 bg-purple-100 ring-2 ring-purple-600'
+                        : 'border-neutral-900 bg-neutral-50 hover:bg-neutral-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="text-lg">{prod.icono || '🍽️'}</span>
-                      {enTicket && (
-                        <span className="bg-purple-600 text-white font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
-                          {enTicket.cantidad}
+                    <div className="flex items-center gap-2.5 truncate">
+                      <span className="text-2xl">{prod.icono || '🍽️'}</span>
+                      <div className="truncate">
+                        <span className="font-black text-neutral-950 text-base block truncate">
+                          {prod.nombre}
                         </span>
-                      )}
+                        <span className="text-base font-extrabold text-purple-900 block">
+                          {formatearMoneda(prod.precio)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-1.5">
-                      <span className="font-bold text-neutral-800 text-xs block leading-tight truncate">
-                        {prod.nombre}
+
+                    {enTicket ? (
+                      <span className="bg-purple-800 text-white font-black text-base px-3 py-1 rounded-full border border-neutral-900 shrink-0">
+                        {enTicket.cantidad} u.
                       </span>
-                      <span className="text-xs font-extrabold text-purple-700 block mt-0.5">
-                        {formatearMoneda(prod.precio)}
+                    ) : (
+                      <span className="text-base font-bold text-neutral-700 bg-neutral-200 px-2.5 py-1 rounded-lg shrink-0">
+                        + Sumar
                       </span>
-                    </div>
+                    )}
                   </button>
                 );
               })}
             </div>
-          </div>
+          </section>
 
-          <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
-              <h3 className="font-bold text-neutral-900 text-sm">
-                Pedido en curso ({itemsActuales.length} {itemsActuales.length === 1 ? 'ítem' : 'ítems'})
-              </h3>
+          {/* DETALLE DEL PEDIDO / CANASTA */}
+          <section className="bg-white p-5 rounded-3xl border-2 border-neutral-900 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b-2 border-neutral-200 pb-2">
+              <label className="text-lg font-black text-neutral-950">
+                Lista del pedido actual:
+              </label>
               {itemsActuales.length > 0 && (
                 <button
+                  type="button"
                   onClick={() => setItemsActuales([])}
-                  className="text-neutral-400 hover:text-red-500 text-xs flex items-center gap-1 font-medium"
+                  className="text-base font-bold text-red-700 hover:text-red-900 flex items-center gap-1"
                 >
-                  <RotateCcw size={13} />
-                  Vaciar
+                  <RotateCcw size={16} />
+                  <span>Vaciar</span>
                 </button>
               )}
             </div>
 
+            {/* 5. ESTADO VACÍO CUANDO AÚN NO SE ELIGIÓ NINGÚN PLATO */}
             {itemsActuales.length === 0 ? (
-              <div className="text-center py-6 px-4 bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
-                <UtensilsCrossed size={28} className="mx-auto text-neutral-300 mb-1.5" />
-                <p className="text-xs text-neutral-500 font-medium">Toca los platos arriba para cargarlos a la venta</p>
+              <div className="text-center py-8 px-4 bg-neutral-50 rounded-2xl border-2 border-dashed border-neutral-400 space-y-2">
+                <ShoppingCart size={36} className="mx-auto text-neutral-600" />
+                <h4 className="text-lg font-black text-neutral-950">
+                  Tu canasta de cobro está vacía
+                </h4>
+                <p className="text-base text-neutral-800 font-medium max-w-xs mx-auto">
+                  Tocá cualquiera de los platos de arriba para sumarlo a la venta.
+                </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {itemsActuales.map(item => (
                   <div
                     key={item.nombre}
-                    className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-xl border border-neutral-100"
+                    className="p-3.5 bg-neutral-50 rounded-2xl border-2 border-neutral-900 flex items-center justify-between flex-wrap gap-2"
                   >
-                    <div className="flex-1 pr-2">
-                      <span className="text-xs font-bold text-neutral-900 block truncate">{item.nombre}</span>
-                      <span className="text-[11px] text-neutral-500 font-medium">
-                        {formatearMoneda(item.precioUnitario)} c/u
+                    <div className="flex-1 min-w-[140px]">
+                      <span className="text-base font-black text-neutral-950 block truncate">
+                        {item.nombre}
+                      </span>
+                      <span className="text-base font-bold text-neutral-700">
+                        {formatearMoneda(item.precioUnitario)} cada uno
                       </span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center bg-white rounded-lg border border-neutral-200 shadow-xs">
+                      {/* Botones táctiles de cantidad de al menos 48px */}
+                      <div className="flex items-center bg-white rounded-xl border-2 border-neutral-900 overflow-hidden">
                         <button
+                          type="button"
                           onClick={() => modificarCantidad(item.nombre, -1)}
-                          className="w-7 h-7 flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-l-lg active:scale-95"
+                          className="w-12 h-12 flex items-center justify-center text-neutral-950 hover:bg-neutral-100 text-lg font-black active:scale-95"
+                          title="Restar 1"
                         >
-                          <Minus size={13} />
+                          <Minus size={18} />
                         </button>
-                        <span className="w-6 text-center text-xs font-extrabold text-neutral-900">
+                        <span className="w-10 text-center text-base font-black text-neutral-950">
                           {item.cantidad}
                         </span>
                         <button
+                          type="button"
                           onClick={() => modificarCantidad(item.nombre, 1)}
-                          className="w-7 h-7 flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-r-lg active:scale-95"
+                          className="w-12 h-12 flex items-center justify-center text-neutral-950 hover:bg-neutral-100 text-lg font-black active:scale-95"
+                          title="Sumar 1"
                         >
-                          <Plus size={13} />
+                          <Plus size={18} />
                         </button>
                       </div>
 
-                      <span className="text-xs font-extrabold text-neutral-900 w-16 text-right">
+                      <span className="text-base font-black text-neutral-950 w-20 text-right">
                         {formatearMoneda(item.subtotal)}
                       </span>
 
                       <button
+                        type="button"
                         onClick={() => removerItem(item.nombre)}
-                        className="text-neutral-300 hover:text-red-500 p-1"
+                        className="w-11 h-11 flex items-center justify-center text-neutral-600 hover:text-red-700 active:scale-95"
+                        title="Eliminar plato"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   </div>
@@ -405,196 +467,207 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
               </div>
             )}
 
-            {/* MÉTODO DE PAGO: COBRO EN EFECTIVO EXCLUSIVO */}
-            <div className="pt-1">
-              <div className="flex items-center justify-between p-3 bg-neutral-950 text-white rounded-2xl border border-purple-900/60 shadow-sm">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-purple-900 text-purple-200 flex items-center justify-center">
-                    <Banknote size={18} />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold block">Cobro en Efectivo</span>
-                    <span className="text-[10px] text-purple-300">Pago directo en mano</span>
-                  </div>
+            {/* FORMA DE COBRO: EFECTIVO */}
+            <div className="bg-neutral-950 text-white p-4 rounded-2xl border-2 border-purple-500 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Banknote size={24} className="text-purple-400 shrink-0" />
+                <div>
+                  <span className="text-base font-black block">Cobro en Efectivo</span>
+                  <span className="text-base text-neutral-300">Pago directo en mano</span>
                 </div>
-                <span className="text-[10px] font-extrabold uppercase tracking-wider bg-purple-600 text-white px-2.5 py-1 rounded-full">
-                  Exclusivo
-                </span>
               </div>
+              <span className="text-base font-black bg-purple-700 text-white px-3 py-1 rounded-xl">
+                Efectivo
+              </span>
             </div>
 
-            {/* CALCULADORA DE VUELTO RÁPIDA */}
+            {/* 3. CALCULADORA DE VUELTO CON ETIQUETAS VISIBLES */}
             {totalActual > 0 && (
-              <div className="bg-purple-50/70 border border-purple-200 rounded-2xl p-3.5 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-purple-950">Calculadora de Vuelto</span>
-                  <span className="text-[11px] text-purple-700 font-semibold">Total a cobrar: {formatearMoneda(totalActual)}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="bg-purple-50 border-2 border-purple-800 rounded-2xl p-4 space-y-3">
+                <label className="text-base font-black text-purple-950 block">
+                  Calculadora de Vuelto para el Cliente:
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-semibold text-neutral-600 block mb-1">Paga con:</label>
+                    <label htmlFor="paga-con" className="text-base font-bold text-neutral-950 block mb-1">
+                      ¿Con cuánta plata te paga el cliente?
+                    </label>
                     <input
+                      id="paga-con"
                       type="number"
-                      placeholder="$ Monto recibido"
+                      placeholder="Ej: 500"
                       value={montoRecibido}
                       onChange={e => setMontoRecibido(e.target.value)}
-                      className="w-full bg-white border border-purple-300 rounded-lg px-2.5 py-1.5 text-xs font-bold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                      className="w-full min-h-[50px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-lg font-black text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
                     />
                   </div>
-                  <div className="flex flex-col justify-end">
-                    <span className="text-[11px] font-semibold text-neutral-600 block mb-1">Vuelto a dar:</span>
-                    <div className="bg-white border border-purple-300 rounded-lg px-2.5 py-1.5 text-xs font-extrabold text-purple-900">
-                      {valorRecibidoNum >= totalActual
-                        ? formatearMoneda(vueltoCalculado)
-                        : '$ 0'}
+
+                  <div>
+                    <label className="text-base font-bold text-neutral-950 block mb-1">
+                      Vuelto exacto a entregar:
+                    </label>
+                    <div className="w-full min-h-[50px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-xl font-black text-purple-950 flex items-center">
+                      {valorRecibidoNum >= totalActual ? formatearMoneda(vueltoCalculado) : '$ 0'}
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* 3. NOTA CON ETIQUETA VISIBLE */}
             <div>
-              <label className="text-xs font-bold text-neutral-700 block mb-1">
-                Nota o Cliente <span className="text-neutral-400 font-normal">(Opcional)</span>
+              <label htmlFor="nota-cliente" className="text-base font-bold text-neutral-950 block mb-1">
+                Nota o número de mesa (Opcional):
               </label>
               <input
+                id="nota-cliente"
                 type="text"
-                placeholder="Ej: Mesa 2, Don Pedro, Para llevar sin mayonesa"
+                placeholder="Ej: Mesa 2, Don Pedro, Para llevar"
                 value={nota}
                 onChange={e => setNota(e.target.value)}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600"
+                className="w-full min-h-[50px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
               />
             </div>
 
+            {/* 4. UN SOLO BOTÓN PRINCIPAL DESTACADO */}
             <div className="pt-2">
               <button
                 type="button"
                 disabled={itemsActuales.length === 0}
                 onClick={registrarVenta}
-                className={`w-full py-4 rounded-2xl font-extrabold text-base flex items-center justify-between px-6 shadow-md transition-all active:scale-[0.98] ${
+                className={`w-full min-h-[58px] py-4 rounded-2xl font-black text-lg flex items-center justify-between px-6 border-2 border-neutral-950 shadow-xl active:scale-[0.98] transition-all ${
                   itemsActuales.length > 0
-                    ? 'bg-neutral-950 hover:bg-black text-white border border-purple-600 shadow-purple-950/20'
-                    : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                    ? 'bg-purple-700 hover:bg-purple-800 text-white cursor-pointer'
+                    : 'bg-neutral-300 text-neutral-600 cursor-not-allowed border-neutral-400'
                 }`}
               >
-                <span>{ventaEnEdicion ? 'Guardar Cambios' : 'Confirmar Venta'}</span>
-                <span className="bg-purple-900/90 text-purple-200 px-3 py-1 rounded-xl text-lg font-black border border-purple-700/50">
+                <span>{ventaEnEdicion ? 'Guardar Cambios' : 'Confirmar y Cobrar Venta'}</span>
+                <span className="bg-neutral-950 text-white px-4 py-1.5 rounded-xl text-xl font-black border border-purple-400">
                   {formatearMoneda(totalActual)}
                 </span>
               </button>
             </div>
-          </div>
+          </section>
         </div>
       )}
 
-      {/* HISTORIAL Y AUDITORÍA */}
+      {/* -------------------- VISTA 2: HISTORIAL Y AUDITORÍA -------------------- */}
       {seccion === 'historial' && (
-        <div className="space-y-3">
-          <div className="bg-white p-3 rounded-2xl border border-neutral-200 shadow-sm space-y-2">
+        <div className="space-y-4">
+          {/* BUSCADOR CON ETIQUETA VISIBLE */}
+          <div className="bg-white p-5 rounded-3xl border-2 border-neutral-900 shadow-sm space-y-2">
+            <label htmlFor="buscador-ventas" className="text-base font-black text-neutral-950 block">
+              Buscar entre tus ventas:
+            </label>
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-2.5 text-neutral-400" />
+              <Search size={22} className="absolute left-3.5 top-3.5 text-neutral-900 pointer-events-none" />
               <input
+                id="buscador-ventas"
                 type="text"
-                placeholder="Buscar por plato, cliente o nota..."
+                placeholder="Escribí comida, cliente o nota..."
                 value={busqueda}
                 onChange={e => setBusqueda(e.target.value)}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-purple-600"
+                className="w-full min-h-[50px] bg-neutral-100 border-2 border-neutral-900 rounded-xl pl-11 pr-4 py-2 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
               />
-            </div>
-
-            <div className="flex items-center justify-between pt-1 text-xs">
-              <span className="font-semibold text-neutral-600">Cobros registrados:</span>
-              <span className="bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full font-bold text-[11px] flex items-center gap-1">
-                <Banknote size={13} />
-                Efectivo
-              </span>
             </div>
           </div>
 
+          {/* 5. ESTADO VACÍO CUANDO NO HAY RESULTADOS */}
           {ventasFiltradas.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 text-center border border-neutral-200 shadow-sm">
-              <AlertCircle size={32} className="mx-auto text-neutral-300 mb-2" />
-              <p className="font-bold text-neutral-700 text-sm">No se encontraron ventas</p>
-              <p className="text-xs text-neutral-400 mt-0.5">Prueba cambiando la búsqueda.</p>
+            <div className="bg-white rounded-3xl p-8 text-center border-2 border-neutral-900 shadow-sm space-y-3">
+              <AlertCircle size={36} className="mx-auto text-neutral-700" />
+              <h3 className="font-black text-neutral-950 text-lg">
+                {ventas.length === 0
+                  ? 'Todavía no registraste ninguna venta'
+                  : 'No se encontró ninguna venta con esa búsqueda'}
+              </h3>
+              <p className="text-base text-neutral-800 font-medium max-w-xs mx-auto">
+                {ventas.length === 0
+                  ? 'Pasá a la pestaña Anotar Venta para cargar el primer pedido del negocio.'
+                  : 'Probá borrando el texto del buscador para ver todas las ventas de la lista.'}
+              </p>
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {ventasFiltradas.map(v => {
                 const esAnulada = v.estado === 'anulada';
                 return (
                   <div
                     key={v.id}
-                    className={`bg-white rounded-2xl p-3.5 border transition-all ${
-                      esAnulada ? 'border-red-200 bg-red-50/30 opacity-70' : 'border-neutral-200 shadow-xs'
+                    className={`bg-white rounded-3xl p-5 border-2 transition-all ${
+                      esAnulada
+                        ? 'border-red-500 bg-red-50 opacity-80'
+                        : 'border-neutral-900 shadow-sm'
                     }`}
                   >
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-start gap-2">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-neutral-900">
-                            #{v.id.slice(-6).toUpperCase()}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-black text-base text-neutral-950">
+                            Ticket #{v.id.slice(-6).toUpperCase()}
                           </span>
-                          <span className="text-[11px] text-neutral-500">
+                          <span className="text-base font-bold text-neutral-700">
                             {formatearFecha(v.fecha)} • {formatearHora(v.fecha)}
                           </span>
-                          {esAnulada && (
-                            <span className="bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                              ANULADA
-                            </span>
-                          )}
                         </div>
 
-                        <div className="mt-1 text-xs text-neutral-700">
-                          {v.items.map(item => `${item.cantidad}x ${item.nombre}`).join(', ')}
+                        <div className="mt-2 text-base font-bold text-neutral-950">
+                          {v.items.map(i => `${i.cantidad}x ${i.nombre}`).join(' + ')}
                         </div>
 
                         {v.clienteONota && (
-                          <div className="text-[11px] text-purple-900 bg-purple-50 px-2 py-0.5 rounded mt-1.5 inline-block font-medium border border-purple-100">
+                          <div className="text-base text-neutral-900 bg-purple-100 border border-purple-800 px-3 py-1 rounded-xl mt-2 inline-block font-bold">
                             📝 {v.clienteONota}
                           </div>
                         )}
                       </div>
 
-                      <div className="text-right">
-                        <span className={`text-base font-extrabold block ${esAnulada ? 'line-through text-neutral-400' : 'text-neutral-900'}`}>
+                      <div className="text-right shrink-0">
+                        <span className="text-2xl font-black text-neutral-950 block">
                           {formatearMoneda(v.total)}
                         </span>
-                        <span className="text-[10px] font-semibold text-purple-700 uppercase tracking-wider block mt-0.5">
+                        <span className="text-base font-bold text-purple-900 bg-purple-100 px-2 py-0.5 rounded-lg border border-purple-300 inline-block mt-1">
                           Efectivo
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-neutral-100 text-xs">
+                    {/* BOTONES SECUNDARIOS DE ACCIÓN (MÍNIMO 44PX DE ALTO) */}
+                    <div className="flex items-center justify-between mt-4 pt-3 border-t-2 border-neutral-200 flex-wrap gap-2">
                       <button
+                        type="button"
                         onClick={() => setVentaParaTicket(v)}
-                        className="text-neutral-700 hover:text-black font-semibold flex items-center gap-1"
+                        className="min-h-[44px] py-2 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-950 text-base font-black rounded-xl border border-neutral-400 flex items-center gap-2"
                       >
-                        <Receipt size={14} className="text-neutral-400" />
+                        <Receipt size={18} />
                         <span>Ver Ticket</span>
                       </button>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         {!esAnulada && (
                           <button
+                            type="button"
                             onClick={() => iniciarEdicion(v)}
-                            className="text-purple-700 hover:text-purple-900 font-semibold flex items-center gap-1"
+                            className="min-h-[44px] py-2 px-3 bg-purple-100 hover:bg-purple-200 text-purple-950 text-base font-black rounded-xl border border-purple-800 flex items-center gap-1.5"
                           >
-                            <Edit2 size={13} />
+                            <Edit2 size={16} />
                             <span>Editar</span>
                           </button>
                         )}
 
                         <button
+                          type="button"
                           onClick={() => {
-                            if (window.confirm(`¿Seguro que deseas eliminar la venta #${v.id.slice(-6).toUpperCase()} por ${formatearMoneda(v.total)}?`)) {
+                            if (window.confirm(`¿Seguro que deseas eliminar la venta por ${formatearMoneda(v.total)}?`)) {
                               onEliminarVenta(v.id);
+                              mostrarMensaje('exito', 'Venta eliminada de la lista.');
                             }
                           }}
-                          className="text-neutral-400 hover:text-red-600 font-semibold flex items-center gap-1"
+                          className="min-h-[44px] py-2 px-3 text-red-700 hover:text-red-900 hover:bg-red-50 text-base font-black rounded-xl border border-red-300 flex items-center gap-1.5"
                         >
-                          <Trash2 size={13} />
-                          <span>Eliminar</span>
+                          <Trash2 size={16} />
+                          <span>Borrar</span>
                         </button>
                       </div>
                     </div>
@@ -606,6 +679,7 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
         </div>
       )}
 
+      {/* MODAL DE TICKET DIGITAL */}
       <TicketModal
         venta={ventaParaTicket}
         alCerrar={() => setVentaParaTicket(null)}

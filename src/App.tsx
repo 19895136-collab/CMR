@@ -124,31 +124,26 @@ export default function App() {
   return (
     <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col font-sans">
       {/* -------------------- ENCABEZADO SUPERIOR MÓVIL -------------------- */}
-      <header className="sticky top-0 z-40 bg-neutral-950 text-white border-b border-purple-950 px-4 py-3 shadow-md">
-        <div className="max-w-xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 to-neutral-900 border border-purple-500/40 text-white flex items-center justify-center shadow-sm">
-              <ChefHat size={22} className="text-purple-300" />
+      <header className="sticky top-0 z-40 bg-neutral-950 text-white border-b-2 border-purple-600 px-4 py-3 shadow-md">
+        <div className="max-w-xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-purple-700 text-white flex items-center justify-center shrink-0 border border-purple-400">
+              <ChefHat size={26} />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-extrabold text-white text-base tracking-tight leading-none">
-                  CMR • Mayeli
-                </h1>
-                <span className="text-[10px] font-bold bg-purple-900/80 text-purple-200 border border-purple-700/60 px-1.5 py-0.5 rounded-full">
-                  Efectivo
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-400 mt-0.5">Control de Ventas de Barrio</p>
+              <h1 className="font-black text-white text-lg tracking-tight leading-tight">
+                CMR • Mayeli
+              </h1>
+              <p className="text-base text-purple-200 font-bold">Comida en Efectivo</p>
             </div>
           </div>
 
-          {/* Badge informativo de ventas del día */}
+          {/* Badge de ventas del día */}
           <div className="text-right">
-            <span className="text-[10px] font-semibold text-neutral-400 block uppercase tracking-wider">
+            <span className="text-base font-bold text-neutral-300 block leading-tight">
               Hoy en Caja
             </span>
-            <span className="text-xs sm:text-sm font-extrabold text-purple-300 block">
+            <span className="text-xl font-black text-purple-300 block">
               {formatearMoneda(totalHoy)}
             </span>
           </div>
@@ -156,7 +151,7 @@ export default function App() {
       </header>
 
       {/* -------------------- CONTENIDO PRINCIPAL DE LA APP -------------------- */}
-      <main className="flex-1 max-w-xl w-full mx-auto p-4 sm:p-5">
+      <main className="flex-1 max-w-xl w-full mx-auto p-3 sm:p-5">
         {/* PESTAÑA 1: RESUMEN DE VENTAS CON GRÁFICOS INTELIGENTES */}
         {tabActivo === 'resumen' && (
           <ResumenVentas
@@ -200,68 +195,66 @@ export default function App() {
         )}
       </main>
 
-      {/* -------------------- BARRA DE NAVEGACIÓN INFERIOR (MOBILE FIRST) -------------------- */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/95 backdrop-blur-lg border-t border-purple-950/80 py-1.5 px-3 shadow-lg">
-        <div className="max-w-xl mx-auto flex items-center justify-around">
+      {/* -------------------- BARRA DE NAVEGACIÓN INFERIOR (TEXTO >= 16PX) -------------------- */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-neutral-950 border-t-2 border-purple-600 py-2 px-2 shadow-2xl">
+        <div className="max-w-xl mx-auto grid grid-cols-4 gap-1">
           {/* TAB 1: RESUMEN */}
           <button
+            type="button"
             onClick={() => setTabActivo('resumen')}
-            className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all ${
+            className={`min-h-[54px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center transition-all ${
               tabActivo === 'resumen'
-                ? 'text-purple-400 font-bold scale-105'
-                : 'text-neutral-400 hover:text-neutral-200 font-medium'
+                ? 'bg-purple-900 text-white font-black border border-purple-400'
+                : 'text-neutral-300 hover:text-white font-bold'
             }`}
           >
-            <BarChart3 size={20} />
-            <span className="text-[10px] mt-1">Resumen</span>
+            <BarChart3 size={22} />
+            <span className="text-base leading-tight mt-0.5">Resumen</span>
           </button>
 
-          {/* TAB 2: VENDER (BOTÓN DESTACADO CENTRAL) */}
+          {/* TAB 2: VENDER */}
           <button
+            type="button"
             onClick={() => setTabActivo('vender')}
-            className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all ${
+            className={`min-h-[54px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center transition-all ${
               tabActivo === 'vender'
-                ? 'text-purple-400 font-bold scale-105'
-                : 'text-neutral-300 hover:text-white font-medium'
+                ? 'bg-purple-700 text-white font-black border border-purple-300 shadow-md'
+                : 'text-neutral-300 hover:text-white font-bold'
             }`}
           >
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all ${
-              tabActivo === 'vender'
-                ? 'bg-purple-600 text-white scale-110 shadow-purple-600/40 border border-purple-400'
-                : 'bg-neutral-800 text-purple-400 border border-neutral-700'
-            }`}>
-              <PlusCircle size={22} />
-            </div>
-            <span className="text-[10px] mt-0.5">Vender</span>
+            <PlusCircle size={22} className="text-purple-300" />
+            <span className="text-base leading-tight mt-0.5">Vender</span>
           </button>
 
-          {/* TAB 3: CONTROL & HISTORIAL */}
+          {/* TAB 3: HISTORIAL */}
           <button
+            type="button"
             onClick={() => setTabActivo('control')}
-            className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all relative ${
+            className={`min-h-[54px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center transition-all relative ${
               tabActivo === 'control'
-                ? 'text-purple-400 font-bold scale-105'
-                : 'text-neutral-400 hover:text-neutral-200 font-medium'
+                ? 'bg-purple-900 text-white font-black border border-purple-400'
+                : 'text-neutral-300 hover:text-white font-bold'
             }`}
           >
-            <History size={20} />
-            <span className="text-[10px] mt-1">Historial</span>
+            <History size={22} />
+            <span className="text-base leading-tight mt-0.5">Ventas</span>
             {ventas.length > 0 && (
-              <span className="absolute top-1 right-2 w-2 h-2 bg-purple-500 rounded-full" />
+              <span className="absolute top-1.5 right-2 w-2.5 h-2.5 bg-purple-400 rounded-full" />
             )}
           </button>
 
-          {/* TAB 4: RESPALDO (FUNCIÓN 3) */}
+          {/* TAB 4: RESPALDO */}
           <button
+            type="button"
             onClick={() => setTabActivo('respaldo')}
-            className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all ${
+            className={`min-h-[54px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center transition-all ${
               tabActivo === 'respaldo'
-                ? 'text-purple-400 font-bold scale-105'
-                : 'text-neutral-400 hover:text-neutral-200 font-medium'
+                ? 'bg-purple-900 text-white font-black border border-purple-400'
+                : 'text-neutral-300 hover:text-white font-bold'
             }`}
           >
-            <ShieldCheck size={20} />
-            <span className="text-[10px] mt-1">Respaldo</span>
+            <ShieldCheck size={22} />
+            <span className="text-base leading-tight mt-0.5">Copia</span>
           </button>
         </div>
       </nav>

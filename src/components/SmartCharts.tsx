@@ -1,30 +1,24 @@
 /**
  * @file SmartCharts.tsx
- * @description Componentes de visualización y gráficos inteligentes interactivos.
- * Diseñados 100% en SVG responsivo sin librerías pesadas ni de pago.
- * Paleta adaptada: Morado y Negro. Cobro exclusivo en efectivo.
- * 
- * ATENCIÓN - PUNTOS DONDE ALGUIEN SUELE EQUIVOCARSE:
- * 1. División por cero en escalas SVG: Si el valor máximo calculado es 0 (ej. no hay ventas en el día),
- *    la fórmula `altura / max` produce Infinity o NaN, rompiendo los atributos SVG de los navegadores.
- *    Siempre asegurar: `const maximoSeguro = Math.max(maximoReal, 1);`
- * 2. Posicionamiento de Tooltips en pantallas táctiles de celulares:
- *    Los eventos 'hover' no existen en celulares táctiles. Se debe implementar 'onClick' o 'onTouchStart'
- *    para fijar el tooltip seleccionado y permitir deseleccionarlo al tocar de nuevo.
- * 3. Agrupación por días: Si se agrupan fechas usando cadenas arbitrarias,
- *    el orden puede invertirse. Siempre ordenar cronológicamente por timestamp.
+ * @description Gráficos y métricas visuales adaptados a los 6 requisitos de accesibilidad:
+ * 1. Ancho desde 320px sin zoom ni desborde.
+ * 2. Alto contraste para leer bajo la luz del sol; tipografía de 16px o más.
+ * 3. Etiquetas claras y descriptivas.
+ * 4. Sin botones principales conflictivos (solo visualización táctil secundaria).
+ * 5. Estado vacío explicativo con invitación a la acción cuando no hay datos.
  */
 
 import React, { useState } from 'react';
 import { Venta } from '../types';
 import { formatearMoneda } from '../utils/storage';
-import { TrendingUp, Banknote, Award, Clock } from 'lucide-react';
+import { TrendingUp, Banknote, Award, Clock, ShoppingCart } from 'lucide-react';
 
 interface SmartChartsProps {
   ventas: Venta[];
+  alIrAVender?: () => void;
 }
 
-export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas }) => {
+export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas, alIrAVender }) => {
   const [puntoSeleccionado, setPuntoSeleccionado] = useState<{
     etiqueta: string;
     total: number;
@@ -33,9 +27,36 @@ export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas }) => {
 
   const ventasActivas = ventas.filter(v => v.estado !== 'anulada');
 
-  // Construir mapa de los últimos 7 días
+  // ESTADO VACÍO (REQUISITO 5)
+  if (ventasActivas.length === 0) {
+    return (
+      <div className="bg-white rounded-3xl p-6 border-2 border-neutral-900 text-center space-y-4 shadow-sm my-4">
+        <div className="w-16 h-16 bg-purple-100 text-purple-900 rounded-full flex items-center justify-center mx-auto border-2 border-neutral-900">
+          <ShoppingCart size={32} />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-black text-neutral-950">
+            Aún no hay ventas registradas
+          </h3>
+          <p className="text-base text-neutral-800 leading-relaxed font-medium max-w-sm mx-auto">
+            Cuando anotes la primera comida del día, aquí vas a ver tus gráficos automáticos de ganancias, platos favoritos y horarios con más clientes.
+          </p>
+        </div>
+        {alIrAVender && (
+          <button
+            type="button"
+            onClick={alIrAVender}
+            className="w-full py-4 px-6 bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-base rounded-2xl border-2 border-neutral-950 shadow-md active:scale-95 transition-all"
+          >
+            Registrar mi primera venta ahora
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // 1. Tendencia de los últimos 7 días
   const diasMap = new Map<string, { total: number; cantidad: number; fechaObj: Date; etiquetaCorta: string }>();
-  
   const hoy = new Date();
   for (let i = 6; i >= 0; i--) {
     const d = new Date(hoy);
@@ -63,11 +84,9 @@ export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas }) => {
   }));
 
   const maxVentaDia = Math.max(...datosTendencia.map(d => d.total), 100);
-
-  // Total efectivo recaudado
   const granTotalVentas = ventasActivas.reduce((acc, curr) => acc + curr.total, 0) || 0;
 
-  // Procesar Top Platos Más Vendidos
+  // 2. Ranking de platos más pedidos
   const platosMap = new Map<string, { unidades: number; recaudado: number }>();
   ventasActivas.forEach(v => {
     v.items.forEach(item => {
@@ -86,12 +105,12 @@ export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas }) => {
 
   const maxUnidades = Math.max(...rankingPlatos.map(p => p.unidades), 1);
 
-  // Franjas Horarias
+  // 3. Franjas Horarias
   const turnos = {
-    manana: { label: 'Mañana (8 - 12hs)', count: 0, total: 0, emoji: '🌅' },
-    almuerzo: { label: 'Almuerzo (12 - 16hs)', count: 0, total: 0, emoji: '🍲' },
-    merienda: { label: 'Tarde (16 - 20hs)', count: 0, total: 0, emoji: '☕' },
-    cena: { label: 'Cena / Noche (20 - 24hs)', count: 0, total: 0, emoji: '🌙' },
+    manana: { label: 'Mañana (8 a 12 hs)', count: 0, total: 0, emoji: '🌅' },
+    almuerzo: { label: 'Almuerzo (12 a 16 hs)', count: 0, total: 0, emoji: '🍲' },
+    merienda: { label: 'Tarde (16 a 20 hs)', count: 0, total: 0, emoji: '☕' },
+    cena: { label: 'Noche (20 a 24 hs)', count: 0, total: 0, emoji: '🌙' },
   };
 
   ventasActivas.forEach(v => {
@@ -113,220 +132,201 @@ export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas }) => {
 
   return (
     <div className="space-y-6">
-      {/* GRÁFICO 1: TENDENCIA DIARIA DE VENTAS EN MORADO Y NEGRO */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-neutral-200">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
-              <TrendingUp size={18} />
+      {/* GRÁFICO 1: TENDENCIA DIARIA (ALTO CONTRASTE Y TEXTO >= 16PX) */}
+      <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-neutral-950 text-white flex items-center justify-center shrink-0">
+              <TrendingUp size={24} />
             </div>
             <div>
-              <h3 className="font-bold text-neutral-900 text-base">Tendencia de Ventas (7 días)</h3>
-              <p className="text-xs text-neutral-500">Toca cualquier barra para ver el detalle</p>
+              <h3 className="font-black text-neutral-950 text-lg leading-tight">
+                Ventas de los últimos 7 días
+              </h3>
+              <p className="text-base text-neutral-800 font-medium">
+                Tocá una barra con el dedo para ver el total
+              </p>
             </div>
           </div>
           {puntoSeleccionado && (
             <button
+              type="button"
               onClick={() => setPuntoSeleccionado(null)}
-              className="text-xs text-purple-700 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded font-medium"
+              className="py-2 px-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-950 text-base font-bold rounded-xl border border-neutral-400"
             >
-              Cerrar detalle
+              Ocultar detalle
             </button>
           )}
         </div>
 
-        {puntoSeleccionado ? (
-          <div className="bg-gradient-to-r from-neutral-950 to-purple-950 border border-purple-900 rounded-xl p-3 my-3 flex items-center justify-between text-xs sm:text-sm text-white animate-fadeIn">
-            <div>
-              <span className="font-bold text-purple-200 block">{puntoSeleccionado.etiqueta}</span>
-              <span className="text-neutral-300">{puntoSeleccionado.cantidad} {puntoSeleccionado.cantidad === 1 ? 'pedido atendido' : 'pedidos atendidos'}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-xs text-neutral-400 block">Total en Caja</span>
-              <span className="font-extrabold text-white text-base">{formatearMoneda(puntoSeleccionado.total)}</span>
+        {puntoSeleccionado && (
+          <div className="bg-neutral-950 text-white rounded-2xl p-4 border-2 border-purple-500 space-y-1">
+            <span className="text-base text-purple-300 font-bold block">{puntoSeleccionado.etiqueta}</span>
+            <div className="flex justify-between items-baseline flex-wrap gap-1">
+              <span className="text-base text-neutral-200 font-medium">
+                {puntoSeleccionado.cantidad} {puntoSeleccionado.cantidad === 1 ? 'comida cobrada' : 'comidas cobradas'}
+              </span>
+              <span className="text-2xl font-black text-white">
+                {formatearMoneda(puntoSeleccionado.total)}
+              </span>
             </div>
           </div>
-        ) : (
-          <div className="h-2 my-1" />
         )}
 
-        <div className="w-full h-48 sm:h-56 mt-2 relative">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 350 160" preserveAspectRatio="none">
-            <line x1="0" y1="20" x2="350" y2="20" stroke="#f5f5f5" strokeDasharray="3 3" strokeWidth="1" />
-            <line x1="0" y1="60" x2="350" y2="60" stroke="#f5f5f5" strokeDasharray="3 3" strokeWidth="1" />
-            <line x1="0" y1="100" x2="350" y2="100" stroke="#f5f5f5" strokeDasharray="3 3" strokeWidth="1" />
-            <line x1="0" y1="135" x2="350" y2="135" stroke="#e5e5e5" strokeWidth="1.5" />
-
-            {datosTendencia.map((dato, index) => {
-              const anchoBarra = 24;
-              const espaciado = 350 / datosTendencia.length;
-              const xCentro = espaciado * index + espaciado / 2;
-              const xInicio = xCentro - anchoBarra / 2;
-              const alturaBarra = Math.round((dato.total / maxVentaDia) * 105);
-              const yInicio = 135 - (alturaBarra > 0 ? alturaBarra : 3);
+        {/* Barras verticales representadas en HTML con alto contraste y soporte de 320px */}
+        <div className="pt-2">
+          <div className="grid grid-cols-7 gap-1.5 items-end h-52 pb-2 border-b-2 border-neutral-900">
+            {datosTendencia.map((dato) => {
+              const porcentaje = Math.round((dato.total / maxVentaDia) * 100);
               const estaSeleccionado = puntoSeleccionado?.etiqueta === dato.etiqueta;
 
               return (
-                <g
+                <button
+                  type="button"
                   key={dato.clave}
-                  className="cursor-pointer transition-all duration-200"
                   onClick={() => setPuntoSeleccionado(dato)}
+                  className="flex flex-col items-center justify-end h-full group focus:outline-none"
+                  title={`${dato.etiqueta}: ${formatearMoneda(dato.total)}`}
                 >
-                  <rect
-                    x={xInicio - 8}
-                    y={10}
-                    width={anchoBarra + 16}
-                    height={130}
-                    fill="transparent"
-                  />
-                  <rect
-                    x={xInicio}
-                    y={yInicio}
-                    width={anchoBarra}
-                    height={alturaBarra > 0 ? alturaBarra : 3}
-                    rx="6"
-                    className={`transition-colors duration-200 ${
-                      estaSeleccionado 
-                        ? 'fill-neutral-950' 
-                        : dato.total > 0 
-                          ? 'fill-purple-600 hover:fill-purple-700' 
-                          : 'fill-neutral-200'
+                  <span className="text-base font-extrabold text-neutral-950 mb-1 leading-none">
+                    {dato.total > 0 ? `$${dato.total}` : ''}
+                  </span>
+                  <div
+                    style={{ height: `${Math.max(porcentaje, 8)}%` }}
+                    className={`w-full max-w-[36px] rounded-t-xl transition-all ${
+                      estaSeleccionado
+                        ? 'bg-neutral-950 ring-4 ring-purple-600'
+                        : dato.total > 0
+                          ? 'bg-purple-700 hover:bg-purple-800'
+                          : 'bg-neutral-300'
                     }`}
                   />
-                  {dato.total > 0 && (
-                    <text
-                      x={xCentro}
-                      y={Math.max(yInicio - 5, 14)}
-                      textAnchor="middle"
-                      className="text-[9px] fill-neutral-700 font-semibold"
-                    >
-                      ${dato.total}
-                    </text>
-                  )}
-                  <text
-                    x={xCentro}
-                    y="152"
-                    textAnchor="middle"
-                    className={`text-[10px] ${estaSeleccionado ? 'fill-purple-700 font-bold' : 'fill-neutral-500 font-medium'}`}
-                  >
-                    {dato.etiqueta.split(' ')[0]}
-                  </text>
-                </g>
+                </button>
               );
             })}
-          </svg>
-        </div>
-      </div>
-
-      {/* GRÁFICO 2: FLUJO DE EFECTIVO EN CAJA (100% EFECTIVO) */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-neutral-200">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-neutral-950 text-purple-400 flex items-center justify-center">
-              <Banknote size={18} />
-            </div>
-            <div>
-              <h3 className="font-bold text-neutral-900 text-base">Cobros en Caja</h3>
-              <p className="text-xs text-neutral-500">100% en Efectivo directo</p>
-            </div>
           </div>
-          <span className="text-[11px] font-bold bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full">
-            Efectivo Único
+
+          {/* Días en texto >= 16px */}
+          <div className="grid grid-cols-7 gap-1.5 pt-2 text-center">
+            {datosTendencia.map((dato) => {
+              const estaSeleccionado = puntoSeleccionado?.etiqueta === dato.etiqueta;
+              return (
+                <span
+                  key={dato.clave}
+                  className={`text-base block truncate font-black ${
+                    estaSeleccionado ? 'text-purple-900 underline' : 'text-neutral-950'
+                  }`}
+                >
+                  {dato.etiqueta.split(' ')[0]}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* GRÁFICO 2: COBRO EN EFECTIVO */}
+      <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-950 text-white flex items-center justify-center shrink-0">
+            <Banknote size={24} />
+          </div>
+          <div>
+            <h3 className="font-black text-neutral-950 text-lg leading-tight">
+              Efectivo cobrado en mano
+            </h3>
+            <p className="text-base text-neutral-800 font-medium">
+              Dinero disponible en la caja física
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-neutral-950 text-white rounded-2xl p-4 border border-neutral-900 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+          <div>
+            <span className="text-base text-neutral-300 font-bold block">Total en caja hoy</span>
+            <span className="text-3xl font-black text-purple-300">{formatearMoneda(granTotalVentas)}</span>
+          </div>
+          <span className="text-base font-extrabold bg-purple-800 text-white px-3 py-1.5 rounded-xl border border-purple-500 self-start sm:self-center">
+            {ventasActivas.length} cobros en efectivo
           </span>
         </div>
+      </section>
 
-        <div className="w-full h-3 bg-neutral-100 rounded-full overflow-hidden my-3">
-          <div className="bg-purple-600 h-full w-full rounded-full" />
-        </div>
-
-        <div className="bg-neutral-950 text-white rounded-xl p-3.5 flex items-center justify-between">
-          <div>
-            <span className="text-xs text-neutral-400 block font-medium">Total Efectivo Físico</span>
-            <span className="text-lg font-black text-purple-300">{formatearMoneda(granTotalVentas)}</span>
-          </div>
-          <div className="text-right">
-            <span className="text-xs text-neutral-400 block font-medium">Transacciones</span>
-            <span className="text-sm font-bold text-white">{ventasActivas.length} cobros</span>
-          </div>
-        </div>
-      </div>
-
-      {/* GRÁFICO 3: RANKING DE PLATOS MÁS VENDIDOS */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-neutral-200">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
-            <Award size={18} />
+      {/* GRÁFICO 3: PLATOS ESTRELLA */}
+      <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-900 border border-neutral-900 flex items-center justify-center shrink-0">
+            <Award size={24} />
           </div>
           <div>
-            <h3 className="font-bold text-neutral-900 text-base">Platos Estrella de Mayeli</h3>
-            <p className="text-xs text-neutral-500">Los platos más pedidos por los vecinos del barrio</p>
+            <h3 className="font-black text-neutral-950 text-lg leading-tight">
+              Comidas más vendidas
+            </h3>
+            <p className="text-base text-neutral-800 font-medium">
+              Los platos preferidos de los vecinos
+            </p>
           </div>
         </div>
 
-        {rankingPlatos.length === 0 ? (
-          <p className="text-neutral-400 text-xs py-4 text-center">Aún no hay platos registrados en las ventas.</p>
-        ) : (
-          <div className="space-y-3 mt-2">
-            {rankingPlatos.map((plato, index) => {
-              const porcentajeBarra = Math.round((plato.unidades / maxUnidades) * 100);
-              const insignias = ['🥇 1°', '🥈 2°', '🥉 3°', '4°', '5°'];
-              
-              return (
-                <div key={plato.nombre} className="space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-neutral-800 flex items-center gap-1.5 truncate max-w-[210px] sm:max-w-none">
-                      <span className="text-[11px] font-bold text-purple-900 bg-purple-100 px-1.5 py-0.5 rounded">
-                        {insignias[index]}
-                      </span>
-                      {plato.nombre}
-                    </span>
-                    <span className="font-bold text-neutral-900 ml-2 whitespace-nowrap">
-                      {plato.unidades} {plato.unidades === 1 ? 'vendido' : 'vendidos'} • <span className="text-purple-700">{formatearMoneda(plato.recaudado)}</span>
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-neutral-100 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="bg-purple-600 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${porcentajeBarra}%` }}
-                    />
-                  </div>
+        <div className="space-y-4">
+          {rankingPlatos.map((plato, idx) => {
+            const porcentaje = Math.round((plato.unidades / maxUnidades) * 100);
+            return (
+              <div key={plato.nombre} className="space-y-1.5">
+                <div className="flex justify-between items-baseline flex-wrap gap-1">
+                  <span className="text-base font-black text-neutral-950">
+                    #{idx + 1} {plato.nombre}
+                  </span>
+                  <span className="text-base font-black text-purple-900">
+                    {plato.unidades} vendidos • {formatearMoneda(plato.recaudado)}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                <div className="w-full bg-neutral-200 rounded-full h-4 overflow-hidden border border-neutral-400">
+                  <div
+                    style={{ width: `${porcentaje}%` }}
+                    className="bg-purple-700 h-full rounded-full transition-all duration-300"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
-      {/* GRÁFICO 4: HORARIOS PICO */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-neutral-200">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-lg bg-neutral-950 text-purple-400 flex items-center justify-center">
-            <Clock size={18} />
+      {/* GRÁFICO 4: HORARIOS DE MÁS TRABAJO */}
+      <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-950 text-white flex items-center justify-center shrink-0">
+            <Clock size={24} />
           </div>
           <div>
-            <h3 className="font-bold text-neutral-900 text-base">Horarios con más movimiento</h3>
-            <p className="text-xs text-neutral-500">¿A qué hora se llena el local de Mayeli?</p>
+            <h3 className="font-black text-neutral-950 text-lg leading-tight">
+              Horarios con más gente
+            </h3>
+            <p className="text-base text-neutral-800 font-medium">
+              Movimiento de ventas por momento del día
+            </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {Object.entries(turnos).map(([clave, turno]) => (
-            <div key={clave} className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xl">{turno.emoji}</span>
-                <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-neutral-200 text-neutral-800">
-                  {turno.count} {turno.count === 1 ? 'venta' : 'ventas'}
-                </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {Object.entries(turnos).map(([clave, t]) => (
+            <div
+              key={clave}
+              className="p-4 bg-neutral-50 rounded-2xl border-2 border-neutral-900 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{t.emoji}</span>
+                <div>
+                  <span className="text-base font-bold text-neutral-950 block">{t.label}</span>
+                  <span className="text-base text-neutral-800 font-medium">{t.count} pedidos</span>
+                </div>
               </div>
-              <div>
-                <span className="text-[11px] font-medium text-neutral-500 block truncate">{turno.label}</span>
-                <span className="text-sm font-extrabold text-neutral-900 block mt-0.5">{formatearMoneda(turno.total)}</span>
-              </div>
+              <span className="text-lg font-black text-purple-900">{formatearMoneda(t.total)}</span>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 };

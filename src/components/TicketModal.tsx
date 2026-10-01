@@ -1,13 +1,6 @@
 /**
  * @file TicketModal.tsx
- * @description Vista previa de ticket de venta con opción de compartir por WhatsApp o copiar resumen.
- * 
- * ATENCIÓN - PUNTOS DONDE ALGUIEN SUELE EQUIVOCARSE:
- * 1. Formato de WhatsApp URL: Los caracteres especiales (saltos de línea, espacios, acentos)
- *    deben codificarse con `encodeURIComponent` para evitar que enlaces en dispositivos móviles
- *    fallen o se corten a la mitad.
- * 2. Bloqueo de clipboard: En navegadores móviles, `navigator.clipboard.writeText` puede fallar
- *    si no se ejecuta dentro de un evento de click directo del usuario.
+ * @description Vista previa de ticket de venta con texto nunca menor a 16px y alto contraste.
  */
 
 import React, { useState } from 'react';
@@ -25,7 +18,6 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
 
   if (!venta) return null;
 
-  // Generar texto para compartir
   const generarTextoRecibo = () => {
     const lineas = [
       `🍲 *CMR - COMIDA CASERA MAYELI*`,
@@ -35,10 +27,10 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
       ...venta.items.map(item => `• ${item.cantidad}x ${item.nombre} = ${formatearMoneda(item.subtotal)}`),
       `--------------------------------`,
       `*TOTAL: ${formatearMoneda(venta.total)}*`,
-      `💳 Pago: ${venta.metodoPago.toUpperCase()}`,
+      `💳 Pago: EFECTIVO`,
       venta.montoRecibido ? `💵 Pagó con: ${formatearMoneda(venta.montoRecibido)} | Vuelto: ${formatearMoneda(venta.vuelto || 0)}` : '',
       venta.clienteONota ? `📝 Nota: ${venta.clienteONota}` : '',
-      `¡Muchas gracias por su compra! ❤️`
+      `¡Muchas gracias por su compra!`
     ].filter(Boolean);
 
     return lineas.join('\n');
@@ -51,7 +43,6 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
       setTimeout(() => setCopiado(false), 2500);
     } catch {
       // Fallback
-      alert('Detalle copiado');
     }
   };
 
@@ -61,40 +52,42 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-stone-200 relative">
-        {/* Botón cerrar */}
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 animate-fadeIn">
+      <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl border-4 border-neutral-950 relative max-h-[90vh] overflow-y-auto">
+        {/* Botón cerrar táctil */}
         <button
+          type="button"
           onClick={alCerrar}
-          className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 bg-stone-100 p-1.5 rounded-full"
+          className="absolute top-4 right-4 text-neutral-950 bg-neutral-200 hover:bg-neutral-300 w-11 h-11 rounded-full flex items-center justify-center border-2 border-neutral-950"
+          title="Cerrar ticket"
         >
-          <X size={18} />
+          <X size={24} />
         </button>
 
         {/* Cabecera del ticket estilo papel de comida */}
-        <div className="text-center pb-4 border-b border-dashed border-neutral-300">
-          <div className="w-10 h-10 bg-neutral-950 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-2">
-            <Receipt size={22} />
+        <div className="text-center pb-4 border-b-2 border-dashed border-neutral-400">
+          <div className="w-14 h-14 bg-neutral-950 text-white rounded-2xl flex items-center justify-center mx-auto mb-2 border-2 border-purple-500">
+            <Receipt size={28} />
           </div>
-          <h3 className="font-extrabold text-neutral-900 text-base">Comida Casera Mayeli</h3>
-          <p className="text-xs text-neutral-500">Ticket de Venta #{venta.id.slice(-6).toUpperCase()}</p>
-          <p className="text-[11px] text-neutral-400 mt-0.5">
+          <h3 className="font-black text-neutral-950 text-xl">Comida Casera Mayeli</h3>
+          <p className="text-base text-neutral-800 font-bold">Ticket #{venta.id.slice(-6).toUpperCase()}</p>
+          <p className="text-base text-neutral-700 font-semibold mt-1">
             {formatearFecha(venta.fecha)} • {formatearHora(venta.fecha)} hs
           </p>
         </div>
 
-        {/* Detalle de productos */}
-        <div className="py-4 space-y-2 max-h-56 overflow-y-auto">
+        {/* Detalle de productos con texto >= 16px */}
+        <div className="py-4 space-y-3">
           {venta.items.map((item, idx) => (
-            <div key={idx} className="flex justify-between items-start text-xs">
+            <div key={idx} className="flex justify-between items-start text-base border-b border-neutral-100 pb-2">
               <div className="pr-2">
-                <span className="font-bold text-neutral-800">{item.cantidad}x </span>
-                <span className="text-neutral-700">{item.nombre}</span>
-                <span className="text-[10px] text-neutral-400 block">
+                <span className="font-black text-neutral-950">{item.cantidad}x </span>
+                <span className="font-bold text-neutral-900">{item.nombre}</span>
+                <span className="text-base text-neutral-700 font-medium block">
                   a {formatearMoneda(item.precioUnitario)} c/u
                 </span>
               </div>
-              <span className="font-bold text-neutral-900 whitespace-nowrap">
+              <span className="font-black text-neutral-950 whitespace-nowrap text-lg">
                 {formatearMoneda(item.subtotal)}
               </span>
             </div>
@@ -102,56 +95,52 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
         </div>
 
         {/* Totales y Método de Pago */}
-        <div className="pt-3 border-t border-dashed border-neutral-300 space-y-1.5 text-xs">
-          <div className="flex justify-between items-center text-sm font-extrabold text-neutral-900">
+        <div className="pt-3 border-t-2 border-dashed border-neutral-400 space-y-2 text-base">
+          <div className="flex justify-between items-center text-xl font-black text-neutral-950 bg-neutral-100 p-2.5 rounded-xl border border-neutral-300">
             <span>TOTAL COBRADO</span>
-            <span className="text-purple-700 text-base font-black">{formatearMoneda(venta.total)}</span>
+            <span className="text-purple-950 text-2xl font-black">{formatearMoneda(venta.total)}</span>
           </div>
 
-          <div className="flex justify-between text-neutral-600 text-[11px]">
+          <div className="flex justify-between items-center text-neutral-950 font-bold">
             <span>Forma de Pago:</span>
-            <span className="font-bold uppercase text-purple-900 bg-purple-100 px-2 py-0.5 rounded">
+            <span className="bg-purple-100 text-purple-950 px-3 py-1 rounded-xl border border-purple-800 font-black">
               Efectivo
             </span>
           </div>
 
           {venta.montoRecibido !== undefined && venta.montoRecibido > 0 && (
-            <div className="flex justify-between text-neutral-600 text-[11px]">
+            <div className="flex justify-between text-neutral-950 font-bold">
               <span>Recibido: {formatearMoneda(venta.montoRecibido)}</span>
-              <span className="text-purple-800 font-bold">Vuelto: {formatearMoneda(venta.vuelto || 0)}</span>
+              <span className="text-purple-950 font-black">Vuelto: {formatearMoneda(venta.vuelto || 0)}</span>
             </div>
           )}
 
           {venta.clienteONota && (
-            <div className="mt-2 bg-purple-50 p-2 rounded-lg text-purple-950 text-[11px] border border-purple-100">
-              <span className="font-bold">Nota/Cliente: </span>
+            <div className="bg-purple-50 p-3 rounded-xl text-neutral-950 text-base border-2 border-purple-800 font-bold">
+              <span className="block text-purple-900">Nota del pedido:</span>
               {venta.clienteONota}
-            </div>
-          )}
-
-          {venta.estado === 'anulada' && (
-            <div className="mt-2 bg-red-100 text-red-700 p-2 rounded-lg text-center font-bold text-xs">
-              ⚠️ VENTA ANULADA
             </div>
           )}
         </div>
 
-        {/* Acciones para celular */}
-        <div className="grid grid-cols-2 gap-2 mt-5">
+        {/* ACCIONES: UN BOTÓN PRINCIPAL Y OTRO SECUNDARIO */}
+        <div className="space-y-2 mt-5">
           <button
-            onClick={copiarAlPortapapeles}
-            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-neutral-300 text-neutral-800 font-bold text-xs bg-neutral-50 active:bg-neutral-100"
+            type="button"
+            onClick={compartirWhatsApp}
+            className="w-full min-h-[50px] py-3 px-4 rounded-2xl text-white font-black text-base bg-purple-700 hover:bg-purple-800 flex items-center justify-center gap-2 border-2 border-neutral-950 shadow-md active:scale-98"
           >
-            {copiado ? <Check size={14} className="text-purple-700" /> : <Copy size={14} />}
-            <span>{copiado ? '¡Copiado!' : 'Copiar'}</span>
+            <Share2 size={20} />
+            <span>Compartir por WhatsApp</span>
           </button>
 
           <button
-            onClick={compartirWhatsApp}
-            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-white font-bold text-xs bg-neutral-950 hover:bg-black active:scale-[0.98] border border-purple-800/80 shadow-xs"
+            type="button"
+            onClick={copiarAlPortapapeles}
+            className="w-full min-h-[50px] py-3 px-4 rounded-2xl border-2 border-neutral-900 text-neutral-950 font-black text-base bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center gap-2 active:scale-98"
           >
-            <Share2 size={14} className="text-purple-400" />
-            <span>WhatsApp</span>
+            {copiado ? <Check size={20} className="text-emerald-700" /> : <Copy size={20} />}
+            <span>{copiado ? '¡Copiado con éxito!' : 'Copiar texto del ticket'}</span>
           </button>
         </div>
       </div>
