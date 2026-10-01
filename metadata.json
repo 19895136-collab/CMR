@@ -1,0 +1,6 @@
+{
+  "name": "CMR - Control de Ventas para Mayeli",
+  "description": "Sistema móvil de control y resumen inteligente de ventas para negocio de comida de barrio de Mayeli.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
