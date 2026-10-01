@@ -444,11 +444,22 @@ export async function exportarArchivoSQLite(): Promise<void> {
  */
 export async function importarArchivoSQLite(archivo: File): Promise<void> {
   const SQL = await cargarSqlEngine();
-  const buffer = await archivo.arrayBuffer();
-  if (SQL) {
-    const u8 = new Uint8Array(buffer);
-    dbInstancia = new SQL.Database(u8);
-    sqliteActivo = true;
-    await sincronizarDiscoSQLite();
+  if (!SQL) {
+    throw new Error('El motor de base de datos no está disponible.');
   }
+
+  const buffer = await archivo.arrayBuffer();
+  if (!buffer || buffer.byteLength < 16) {
+    throw new Error('El archivo está vacío o dañado.');
+  }
+
+  const u8 = new Uint8Array(buffer);
+  const header = new TextDecoder().decode(u8.slice(0, 15));
+  if (!header.startsWith('SQLite format 3')) {
+    throw new Error('El archivo no es una base de datos SQLite válida.');
+  }
+
+  dbInstancia = new SQL.Database(u8);
+  sqliteActivo = true;
+  await sincronizarDiscoSQLite();
 }

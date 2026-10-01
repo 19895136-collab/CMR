@@ -13,6 +13,7 @@ import { Venta, ProductoComida } from '../types';
 import { exportarRespaldoJSON, exportarVentasCSV, formatearMoneda } from '../utils/storage';
 import { exportarArchivoSQLite, importarArchivoSQLite, leerVentasSQLite } from '../services/sqliteDb';
 import { generarVentasEjemplo } from '../data/initialData';
+import { PWAInstallButton } from './PWAInstallButton';
 import { 
   Database, Download, Upload, FileSpreadsheet, 
   RotateCcw, Check, AlertTriangle, ShieldCheck, 
@@ -70,11 +71,21 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
       try {
         const contenido = evento.target?.result as string;
         const datos = JSON.parse(contenido);
-        if (!Array.isArray(datos)) throw new Error();
-        onRestablecerVentas(datos);
-        mostrarMensaje('exito', `¡Copia de seguridad cargada! Se restauraron ${datos.length} ventas.`);
+        if (!Array.isArray(datos)) throw new Error('No es lista');
+
+        // Validación estricta para evitar datos corruptos o incompletos
+        const ventasValidas: Venta[] = datos.filter(
+          v => v && typeof v === 'object' && typeof v.id === 'string' && typeof v.total === 'number' && Array.isArray(v.items)
+        );
+
+        if (ventasValidas.length === 0 && datos.length > 0) {
+          throw new Error('Formato corrupto');
+        }
+
+        onRestablecerVentas(ventasValidas);
+        mostrarMensaje('exito', `¡Copia de seguridad cargada! Se restauraron ${ventasValidas.length} ventas.`);
       } catch {
-        mostrarMensaje('error', 'El archivo no contiene un formato de ventas válido.');
+        mostrarMensaje('error', 'El archivo no contiene un formato de ventas válido o está dañado.');
       }
     };
     lector.readAsText(archivo);
@@ -83,19 +94,21 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
 
   const agregarPlatoAlMenu = (e: React.FormEvent) => {
     e.preventDefault();
+    const nombreLimpio = nuevoNombre.replace(/[\u200B-\u200D\uFEFF]/g, '').trim().slice(0, 45);
     const precio = parseFloat(nuevoPrecio);
-    if (!nuevoNombre.trim()) {
-      mostrarMensaje('error', 'Escribí el nombre de la comida.');
+
+    if (nombreLimpio.length < 2) {
+      mostrarMensaje('error', 'Escribí un nombre de comida válido (al menos 2 letras).');
       return;
     }
-    if (isNaN(precio) || precio <= 0) {
-      mostrarMensaje('error', 'Ingresá un precio en pesos mayor a cero.');
+    if (isNaN(precio) || precio <= 0 || precio > 500000) {
+      mostrarMensaje('error', 'Ingresá un precio válido entre $1 y $500.000.');
       return;
     }
 
     const nuevo: ProductoComida = {
       id: `prod_${Date.now()}`,
-      nombre: nuevoNombre.trim(),
+      nombre: nombreLimpio,
       precio: precio,
       categoria: 'almuerzos',
       icono: nuevoIcono
@@ -144,6 +157,9 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           </button>
         </div>
       )}
+
+      {/* INSTALACIÓN EN EL TELÉFONO */}
+      <PWAInstallButton variante="banner" />
 
       {/* ESTADO DEL GUARDADO PERMANENTE */}
       <section className="bg-white rounded-3xl p-5 border-2 border-neutral-900 shadow-sm space-y-3">
@@ -316,9 +332,10 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
             <input
               id="nombre-nuevo-plato"
               type="text"
+              maxLength={45}
               placeholder="Ej: Pastel de Papa"
               value={nuevoNombre}
-              onChange={e => setNuevoNombre(e.target.value)}
+              onChange={e => setNuevoNombre(e.target.value.slice(0, 45))}
               className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
           </div>
@@ -330,9 +347,14 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
             <input
               id="precio-nuevo-plato"
               type="number"
+              min="1"
+              max="500000"
               placeholder="Ej: 140"
               value={nuevoPrecio}
-              onChange={e => setNuevoPrecio(e.target.value)}
+              onKeyDown={e => {
+                if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
+              }}
+              onChange={e => setNuevoPrecio(e.target.value.slice(0, 7))}
               className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
           </div>

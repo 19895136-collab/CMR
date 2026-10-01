@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { Venta, PeriodoFiltro } from '../types';
 import { formatearMoneda } from '../utils/storage';
 import { SmartCharts } from './SmartCharts';
+import { SelloIAEjercicio } from './SelloIAEjercicio';
 import { DollarSign, Utensils, Calendar, PlusCircle, ShoppingCart } from 'lucide-react';
 
 interface ResumenVentasProps {
@@ -23,9 +24,10 @@ export const ResumenVentas: React.FC<ResumenVentasProps> = ({ ventas, alIrARegis
   const [periodo, setPeriodo] = useState<PeriodoFiltro>('hoy');
 
   const ventasFiltradas = ventas.filter(v => {
-    if (v.estado === 'anulada') return false;
+    if (!v || v.estado === 'anulada') return false;
 
     const fechaVenta = new Date(v.fecha);
+    if (isNaN(fechaVenta.getTime())) return false;
     const ahora = new Date();
 
     if (periodo === 'hoy') {
@@ -52,15 +54,18 @@ export const ResumenVentas: React.FC<ResumenVentasProps> = ({ ventas, alIrARegis
     return true;
   });
 
-  const totalRecaudado = ventasFiltradas.reduce((acc, curr) => acc + curr.total, 0);
+  const totalRecaudado = ventasFiltradas.reduce((acc, curr) => acc + (Number(curr?.total) || 0), 0);
   const totalPedidos = ventasFiltradas.length;
   const ticketPromedio = totalPedidos > 0 ? totalRecaudado / totalPedidos : 0;
 
   // Plato estrella
   const contadorPlatos: { [nombre: string]: number } = {};
   ventasFiltradas.forEach(v => {
-    v.items.forEach(item => {
-      contadorPlatos[item.nombre] = (contadorPlatos[item.nombre] || 0) + item.cantidad;
+    if (!v) return;
+    const items = Array.isArray(v.items) ? v.items : [];
+    items.forEach(item => {
+      if (!item || !item.nombre) return;
+      contadorPlatos[item.nombre] = (contadorPlatos[item.nombre] || 0) + (Number(item.cantidad) || 0);
     });
   });
 
@@ -186,6 +191,13 @@ export const ResumenVentas: React.FC<ResumenVentasProps> = ({ ventas, alIrARegis
           </div>
         </>
       )}
+
+      {/* SECCIÓN DEL SELLO DE IA DE MI EJERCICIO */}
+      <SelloIAEjercicio
+        ventas={ventasFiltradas.length > 0 ? ventasFiltradas : ventas}
+        totalRecaudado={totalRecaudado}
+        platoEstrella={platoEstrella}
+      />
 
       {/* SECCIÓN DE GRÁFICOS INTELIGENTES */}
       <div>

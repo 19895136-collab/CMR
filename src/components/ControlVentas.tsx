@@ -48,6 +48,7 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
   const [ventaEnEdicion, setVentaEnEdicion] = useState<Venta | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [ventaParaTicket, setVentaParaTicket] = useState<Venta | null>(null);
+  const [guardando, setGuardando] = useState(false);
 
   // 6. MENSAJES CLAROS DE ÉXITO Y ERROR EN ESPAÑOL SIMPLE
   const [notificacion, setNotificacion] = useState<{
@@ -55,7 +56,7 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
     mensaje: string;
   } | null>(null);
 
-  const totalActual = itemsActuales.reduce((acc, curr) => acc + curr.subtotal, 0);
+  const totalActual = itemsActuales.reduce((acc, curr) => acc + (curr.subtotal || 0), 0);
   const valorRecibidoNum = parseFloat(montoRecibido) || 0;
   const vueltoCalculado = Math.max(0, Math.round((valorRecibidoNum - totalActual) * 100) / 100);
 
@@ -89,13 +90,15 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
 
   const agregarPlatoLibre = (e: React.FormEvent) => {
     e.preventDefault();
+    const nombreLimpio = platoPersonalizadoNombre.replace(/[\u200B-\u200D\uFEFF]/g, '').trim().slice(0, 45);
     const precio = parseFloat(platoPersonalizadoPrecio);
-    if (!platoPersonalizadoNombre.trim()) {
-      mostrarMensaje('error', 'Escribí el nombre de la comida antes de agregarla.');
+
+    if (nombreLimpio.length < 2) {
+      mostrarMensaje('error', 'Escribí un nombre de comida válido (al menos 2 letras).');
       return;
     }
-    if (isNaN(precio) || precio <= 0) {
-      mostrarMensaje('error', 'El precio debe ser un número mayor a cero.');
+    if (isNaN(precio) || precio <= 0 || precio > 500000) {
+      mostrarMensaje('error', 'El precio debe ser un número entre $1 y $500.000.');
       return;
     }
 
@@ -103,7 +106,7 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
       ...prev,
       {
         id: `libre_${Date.now()}`,
-        nombre: platoPersonalizadoNombre.trim(),
+        nombre: nombreLimpio,
         precioUnitario: precio,
         cantidad: 1,
         subtotal: precio
@@ -145,44 +148,54 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
     setVentaEnEdicion(null);
   };
 
-  const registrarVenta = () => {
+  const registrarVenta = async () => {
+    if (guardando) return;
+
     if (itemsActuales.length === 0 || totalActual <= 0) {
       mostrarMensaje('error', 'Elegí al menos una comida de la lista para poder cobrar.');
       return;
     }
 
-    if (ventaEnEdicion) {
-      const ventaActualizada: Venta = {
-        ...ventaEnEdicion,
-        items: itemsActuales,
-        total: totalActual,
-        metodoPago: 'efectivo',
-        montoRecibido: valorRecibidoNum > 0 ? valorRecibidoNum : undefined,
-        vuelto: valorRecibidoNum >= totalActual ? vueltoCalculado : undefined,
-        clienteONota: nota.trim() || undefined
-      };
+    setGuardando(true);
 
-      onEditarVenta(ventaActualizada);
-      mostrarMensaje('exito', `¡Venta #${ventaEnEdicion.id.slice(-4)} actualizada con éxito!`);
-      limpiarFormulario();
-      setSeccion('historial');
-    } else {
-      const nuevaVenta: Venta = {
-        id: `v_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        fecha: new Date().toISOString(),
-        items: itemsActuales,
-        total: totalActual,
-        metodoPago: 'efectivo',
-        montoRecibido: valorRecibidoNum > 0 ? valorRecibidoNum : undefined,
-        vuelto: valorRecibidoNum >= totalActual ? vueltoCalculado : undefined,
-        clienteONota: nota.trim() || undefined,
-        estado: 'completada',
-        creadaEn: Date.now()
-      };
+    try {
+      const notaLimpia = nota.replace(/[\u200B-\u200D\uFEFF]/g, '').trim().slice(0, 60);
 
-      onAgregarVenta(nuevaVenta);
-      mostrarMensaje('exito', `¡Cobro de ${formatearMoneda(totalActual)} guardado en tu caja!`);
-      limpiarFormulario();
+      if (ventaEnEdicion) {
+        const ventaActualizada: Venta = {
+          ...ventaEnEdicion,
+          items: itemsActuales,
+          total: totalActual,
+          metodoPago: 'efectivo',
+          montoRecibido: valorRecibidoNum > 0 ? valorRecibidoNum : undefined,
+          vuelto: valorRecibidoNum >= totalActual ? vueltoCalculado : undefined,
+          clienteONota: notaLimpia || undefined
+        };
+
+        onEditarVenta(ventaActualizada);
+        mostrarMensaje('exito', `¡Venta #${ventaEnEdicion.id.slice(-4)} actualizada con éxito!`);
+        limpiarFormulario();
+        setSeccion('historial');
+      } else {
+        const nuevaVenta: Venta = {
+          id: `v_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          fecha: new Date().toISOString(),
+          items: itemsActuales,
+          total: totalActual,
+          metodoPago: 'efectivo',
+          montoRecibido: valorRecibidoNum > 0 ? valorRecibidoNum : undefined,
+          vuelto: valorRecibidoNum >= totalActual ? vueltoCalculado : undefined,
+          clienteONota: notaLimpia || undefined,
+          estado: 'completada',
+          creadaEn: Date.now()
+        };
+
+        onAgregarVenta(nuevaVenta);
+        mostrarMensaje('exito', `¡Cobro de ${formatearMoneda(totalActual)} guardado en tu caja!`);
+        limpiarFormulario();
+      }
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -195,14 +208,14 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
   };
 
   const ventasFiltradas = ventas.filter(v => {
-    if (busqueda.trim()) {
-      const q = busqueda.toLowerCase().trim();
-      const coincidePlato = v.items.some(i => i.nombre.toLowerCase().includes(q));
-      const coincideNota = (v.clienteONota || '').toLowerCase().includes(q);
-      const coincideId = v.id.toLowerCase().includes(q);
-      return coincidePlato || coincideNota || coincideId;
-    }
-    return true;
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return true;
+    if (!v) return false;
+    const items = Array.isArray(v.items) ? v.items : [];
+    const coincidePlato = items.some(i => (i?.nombre || '').toLowerCase().includes(q));
+    const coincideNota = (v.clienteONota || '').toLowerCase().includes(q);
+    const coincideId = (v.id || '').toLowerCase().includes(q);
+    return coincidePlato || coincideNota || coincideId;
   });
 
   return (
@@ -308,9 +321,10 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
                   <input
                     id="nombre-libre"
                     type="text"
+                    maxLength={45}
                     placeholder="Ej: Empanada de verdura"
                     value={platoPersonalizadoNombre}
-                    onChange={e => setPlatoPersonalizadoNombre(e.target.value)}
+                    onChange={e => setPlatoPersonalizadoNombre(e.target.value.slice(0, 45))}
                     className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-3 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
                   />
                 </div>
@@ -322,9 +336,14 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
                   <input
                     id="precio-libre"
                     type="number"
+                    min="1"
+                    max="500000"
                     placeholder="Ej: 150"
                     value={platoPersonalizadoPrecio}
-                    onChange={e => setPlatoPersonalizadoPrecio(e.target.value)}
+                    onKeyDown={e => {
+                      if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
+                    }}
+                    onChange={e => setPlatoPersonalizadoPrecio(e.target.value.slice(0, 7))}
                     className="w-full min-h-[48px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-3 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
                   />
                 </div>
@@ -496,9 +515,14 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
                     <input
                       id="paga-con"
                       type="number"
+                      min="0"
+                      max="10000000"
                       placeholder="Ej: 500"
                       value={montoRecibido}
-                      onChange={e => setMontoRecibido(e.target.value)}
+                      onKeyDown={e => {
+                        if (['-', '+', 'e', 'E'].includes(e.key)) e.preventDefault();
+                      }}
+                      onChange={e => setMontoRecibido(e.target.value.slice(0, 8))}
                       className="w-full min-h-[50px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-lg font-black text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
                     />
                   </div>
@@ -523,9 +547,10 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
               <input
                 id="nota-cliente"
                 type="text"
+                maxLength={60}
                 placeholder="Ej: Mesa 2, Don Pedro, Para llevar"
                 value={nota}
-                onChange={e => setNota(e.target.value)}
+                onChange={e => setNota(e.target.value.slice(0, 60))}
                 className="w-full min-h-[50px] bg-white border-2 border-neutral-900 rounded-xl px-4 py-2.5 text-base font-bold text-neutral-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
               />
             </div>
@@ -534,15 +559,15 @@ export const ControlVentas: React.FC<ControlVentasProps> = ({
             <div className="pt-2">
               <button
                 type="button"
-                disabled={itemsActuales.length === 0}
+                disabled={guardando || itemsActuales.length === 0 || totalActual <= 0}
                 onClick={registrarVenta}
                 className={`w-full min-h-[58px] py-4 rounded-2xl font-black text-lg flex items-center justify-between px-6 border-2 border-neutral-950 shadow-xl active:scale-[0.98] transition-all ${
-                  itemsActuales.length > 0
+                  !guardando && itemsActuales.length > 0 && totalActual > 0
                     ? 'bg-purple-700 hover:bg-purple-800 text-white cursor-pointer'
                     : 'bg-neutral-300 text-neutral-600 cursor-not-allowed border-neutral-400'
                 }`}
               >
-                <span>{ventaEnEdicion ? 'Guardar Cambios' : 'Confirmar y Cobrar Venta'}</span>
+                <span>{guardando ? 'Guardando venta...' : ventaEnEdicion ? 'Guardar Cambios' : 'Confirmar y Cobrar Venta'}</span>
                 <span className="bg-neutral-950 text-white px-4 py-1.5 rounded-xl text-xl font-black border border-purple-400">
                   {formatearMoneda(totalActual)}
                 </span>

@@ -19,17 +19,18 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
   if (!venta) return null;
 
   const generarTextoRecibo = () => {
+    const items = Array.isArray(venta.items) ? venta.items : [];
     const lineas = [
       `🍲 *CMR - COMIDA CASERA MAYELI*`,
       `📅 Fecha: ${formatearFecha(venta.fecha)} - ${formatearHora(venta.fecha)}`,
-      `🧾 Ticket #${venta.id.slice(-6).toUpperCase()}`,
+      `🧾 Ticket #${(venta.id || '').slice(-6).toUpperCase()}`,
       `--------------------------------`,
-      ...venta.items.map(item => `• ${item.cantidad}x ${item.nombre} = ${formatearMoneda(item.subtotal)}`),
+      ...items.map(item => `• ${item?.cantidad || 1}x ${item?.nombre || 'Plato'} = ${formatearMoneda(item?.subtotal || 0)}`),
       `--------------------------------`,
-      `*TOTAL: ${formatearMoneda(venta.total)}*`,
+      `*TOTAL: ${formatearMoneda(venta.total || 0)}*`,
       `💳 Pago: EFECTIVO`,
       venta.montoRecibido ? `💵 Pagó con: ${formatearMoneda(venta.montoRecibido)} | Vuelto: ${formatearMoneda(venta.vuelto || 0)}` : '',
-      venta.clienteONota ? `📝 Nota: ${venta.clienteONota}` : '',
+      venta.clienteONota ? `📝 Nota: ${venta.clienteONota.slice(0, 60)}` : '',
       `¡Muchas gracias por su compra!`
     ].filter(Boolean);
 
@@ -47,7 +48,7 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
   };
 
   const compartirWhatsApp = () => {
-    const texto = encodeURIComponent(generarTextoRecibo());
+    const texto = encodeURIComponent(generarTextoRecibo().slice(0, 1800));
     window.open(`https://api.whatsapp.com/send?text=${texto}`, '_blank');
   };
 

@@ -68,10 +68,11 @@ export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas, alIrAVender })
   }
 
   ventasActivas.forEach(v => {
-    const clave = v.fecha.slice(0, 10);
-    if (diasMap.has(clave)) {
-      const entrada = diasMap.get(clave)!;
-      entrada.total += v.total;
+    if (!v) return;
+    const fechaValida = v.fecha ? v.fecha.slice(0, 10) : '';
+    if (fechaValida && diasMap.has(fechaValida)) {
+      const entrada = diasMap.get(fechaValida)!;
+      entrada.total += Number(v.total) || 0;
       entrada.cantidad += 1;
     }
   });
@@ -84,16 +85,19 @@ export const SmartCharts: React.FC<SmartChartsProps> = ({ ventas, alIrAVender })
   }));
 
   const maxVentaDia = Math.max(...datosTendencia.map(d => d.total), 100);
-  const granTotalVentas = ventasActivas.reduce((acc, curr) => acc + curr.total, 0) || 0;
+  const granTotalVentas = ventasActivas.reduce((acc, curr) => acc + (Number(curr?.total) || 0), 0) || 0;
 
   // 2. Ranking de platos más pedidos
   const platosMap = new Map<string, { unidades: number; recaudado: number }>();
   ventasActivas.forEach(v => {
-    v.items.forEach(item => {
+    if (!v) return;
+    const items = Array.isArray(v.items) ? v.items : [];
+    items.forEach(item => {
+      if (!item || !item.nombre) return;
       const actual = platosMap.get(item.nombre) || { unidades: 0, recaudado: 0 };
       platosMap.set(item.nombre, {
-        unidades: actual.unidades + item.cantidad,
-        recaudado: actual.recaudado + item.subtotal
+        unidades: actual.unidades + (Number(item.cantidad) || 0),
+        recaudado: actual.recaudado + (Number(item.subtotal) || 0)
       });
     });
   });

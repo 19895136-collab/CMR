@@ -31,6 +31,7 @@ import {
 import { ResumenVentas } from './components/ResumenVentas';
 import { ControlVentas } from './components/ControlVentas';
 import { AjustesRespaldo } from './components/AjustesRespaldo';
+import { PWAInstallButton } from './components/PWAInstallButton';
 import { 
   BarChart3, PlusCircle, History, 
   ShieldCheck, ChefHat
@@ -138,14 +139,17 @@ export default function App() {
             </div>
           </div>
 
-          {/* Badge de ventas del día */}
-          <div className="text-right">
-            <span className="text-base font-bold text-neutral-300 block leading-tight">
-              Hoy en Caja
-            </span>
-            <span className="text-xl font-black text-purple-300 block">
-              {formatearMoneda(totalHoy)}
-            </span>
+          {/* Acciones y Badge de ventas del día */}
+          <div className="flex items-center gap-2">
+            <PWAInstallButton variante="boton-header" />
+            <div className="text-right shrink-0">
+              <span className="text-base font-bold text-neutral-300 block leading-tight">
+                Hoy en Caja
+              </span>
+              <span className="text-xl font-black text-purple-300 block">
+                {formatearMoneda(totalHoy)}
+              </span>
+            </div>
           </div>
         </div>
       </header>

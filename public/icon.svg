@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#171717"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="none" stroke="#9333ea" stroke-width="16"/>
+  <!-- Chef hat icon / food symbol in purple and white -->
+  <g transform="translate(64, 64) scale(16)">
+    <path fill="#a855f7" d="M6 13.84c-1.84-.71-3-2.46-3-4.34 0-2.61 2.06-4.77 4.67-4.98C8.28 2.22 10.39 1 12 1s3.72 1.22 4.33 3.52c2.61.21 4.67 2.37 4.67 4.98 0 1.88-1.16 3.63-3 4.34V20a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-6.16z"/>
+    <path fill="#ffffff" d="M8 18h8v2H8zm0-3h8v1.5H8z"/>
+  </g>
+  <text x="256" y="440" font-family="system-ui, sans-serif" font-size="56" font-weight="900" fill="#f3e8ff" text-anchor="middle" letter-spacing="2">CMR MAYELI</text>
+</svg>
