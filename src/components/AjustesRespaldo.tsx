@@ -128,37 +128,37 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
       )}
 
       {/* ESTADO DE PERSISTENCIA LOCAL (REQUISITO 3) */}
-      <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-3">
+      <div className="bg-white rounded-3xl p-5 border border-neutral-200 shadow-sm space-y-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center">
             <ShieldCheck size={22} />
           </div>
           <div>
-            <h3 className="font-extrabold text-stone-900 text-base">Tus Ventas Están Protegidas</h3>
-            <p className="text-xs text-stone-500">Guardado automático en la memoria de tu dispositivo</p>
+            <h3 className="font-extrabold text-neutral-900 text-base">Tus Ventas Están Protegidas</h3>
+            <p className="text-xs text-neutral-500">Guardado automático en la memoria de tu dispositivo</p>
           </div>
         </div>
 
-        <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-100 flex items-center justify-between text-xs">
+        <div className="bg-neutral-50 rounded-2xl p-3.5 border border-neutral-100 flex items-center justify-between text-xs">
           <div>
-            <span className="text-stone-500 block">Ventas guardadas actualmente:</span>
-            <span className="font-extrabold text-stone-900 text-sm">{ventas.length} transacciones</span>
+            <span className="text-neutral-500 block">Ventas guardadas actualmente:</span>
+            <span className="font-extrabold text-neutral-900 text-sm">{ventas.length} transacciones en efectivo</span>
           </div>
-          <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1">
+          <span className="bg-purple-100 text-purple-800 font-bold px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1">
             <Database size={13} />
             Almacenamiento Activo
           </span>
         </div>
 
-        <p className="text-xs text-stone-600 leading-relaxed">
+        <p className="text-xs text-neutral-600 leading-relaxed">
           Cada vez que registras o modificas una venta, CMR la guarda de inmediato en tu navegador. Puedes cerrar la app o apagar tu celular: tus datos se mantendrán listos para cuando vuelvas.
         </p>
       </div>
 
       {/* RESPALDO Y EXPORTACIÓN */}
-      <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-3">
-        <h3 className="font-bold text-stone-900 text-sm flex items-center gap-2">
-          <Download size={16} className="text-orange-500" />
+      <div className="bg-white rounded-3xl p-5 border border-neutral-200 shadow-sm space-y-3">
+        <h3 className="font-bold text-neutral-900 text-sm flex items-center gap-2">
+          <Download size={16} className="text-purple-600" />
           Copias de Seguridad y Reportes
         </h3>
 
@@ -166,25 +166,25 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           {/* Exportar JSON */}
           <button
             onClick={() => exportarRespaldoJSON(ventas)}
-            className="p-3.5 rounded-2xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-left flex items-center justify-between transition-all"
+            className="p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left flex items-center justify-between transition-all"
           >
             <div>
-              <span className="font-bold text-stone-900 text-xs block">Descargar Copia (.json)</span>
-              <span className="text-[11px] text-stone-500">Para pasar tus ventas a otro celular</span>
+              <span className="font-bold text-neutral-900 text-xs block">Descargar Copia (.json)</span>
+              <span className="text-[11px] text-neutral-500">Para pasar tus ventas a otro celular</span>
             </div>
-            <Download size={18} className="text-stone-600" />
+            <Download size={18} className="text-purple-700" />
           </button>
 
           {/* Exportar CSV / Excel */}
           <button
             onClick={() => exportarVentasCSV(ventas)}
-            className="p-3.5 rounded-2xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-left flex items-center justify-between transition-all"
+            className="p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-left flex items-center justify-between transition-all"
           >
             <div>
-              <span className="font-bold text-stone-900 text-xs block">Exportar a Excel (.csv)</span>
-              <span className="text-[11px] text-stone-500">Tabla con fechas, platos y totales</span>
+              <span className="font-bold text-neutral-900 text-xs block">Exportar a Excel (.csv)</span>
+              <span className="text-[11px] text-neutral-500">Tabla con fechas, platos y totales</span>
             </div>
-            <FileSpreadsheet size={18} className="text-emerald-600" />
+            <FileSpreadsheet size={18} className="text-purple-700" />
           </button>
         </div>
 
@@ -200,9 +200,9 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
         <div className="pt-2 flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => archivoInputRef.current?.click()}
-            className="flex-1 py-2.5 px-3 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 px-3 bg-neutral-950 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-purple-900/60"
           >
-            <Upload size={14} />
+            <Upload size={14} className="text-purple-400" />
             <span>Restaurar Copia desde Archivo</span>
           </button>
 
@@ -214,7 +214,7 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
                 mostrarMensaje('exito', 'Se recargaron los datos de ejemplo.');
               }
             }}
-            className="py-2.5 px-3 border border-stone-200 text-stone-700 hover:bg-stone-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
+            className="py-2.5 px-3 border border-neutral-200 text-neutral-700 hover:bg-neutral-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
           >
             <RotateCcw size={14} />
             <span>Recargar Datos de Ejemplo</span>
@@ -223,20 +223,20 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
       </div>
 
       {/* GESTIÓN DEL MENÚ / PLATOS DE COMIDA DE MAYELI */}
-      <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-4">
+      <div className="bg-white rounded-3xl p-5 border border-neutral-200 shadow-sm space-y-4">
         <div className="flex items-center gap-2">
-          <Utensils size={16} className="text-orange-500" />
-          <h3 className="font-bold text-stone-900 text-sm">Gestionar Platos del Negocio</h3>
+          <Utensils size={16} className="text-purple-600" />
+          <h3 className="font-bold text-neutral-900 text-sm">Gestionar Platos del Negocio</h3>
         </div>
 
         {/* Formulario para agregar plato al menú */}
-        <form onSubmit={agregarPlatoAlMenu} className="bg-stone-50 p-3 rounded-2xl border border-stone-200 space-y-2">
-          <span className="text-xs font-bold text-stone-700 block">Agregar nuevo plato al menú</span>
+        <form onSubmit={agregarPlatoAlMenu} className="bg-neutral-50 p-3 rounded-2xl border border-neutral-200 space-y-2">
+          <span className="text-xs font-bold text-neutral-700 block">Agregar nuevo plato al menú</span>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
             <select
               value={nuevoIcono}
               onChange={e => setNuevoIcono(e.target.value)}
-              className="bg-white border border-stone-300 rounded-xl px-2 py-2 text-sm focus:outline-none"
+              className="bg-white border border-neutral-300 rounded-xl px-2 py-2 text-sm focus:outline-none"
             >
               <option value="🍲">🍲 Sopa / Olla</option>
               <option value="🥩">🥩 Carne / Milanesa</option>
@@ -253,7 +253,7 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
               placeholder="Nombre (ej: Pastel de Papa)"
               value={nuevoNombre}
               onChange={e => setNuevoNombre(e.target.value)}
-              className="sm:col-span-2 bg-white border border-stone-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-orange-500"
+              className="sm:col-span-2 bg-white border border-neutral-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600"
             />
             <div className="flex gap-2">
               <input
@@ -261,11 +261,11 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
                 placeholder="Precio $"
                 value={nuevoPrecio}
                 onChange={e => setNuevoPrecio(e.target.value)}
-                className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-orange-500"
+                className="w-full bg-white border border-neutral-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600"
               />
               <button
                 type="submit"
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center justify-center"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center justify-center shadow-xs"
               >
                 <Plus size={16} />
               </button>
@@ -278,18 +278,18 @@ export const AjustesRespaldo: React.FC<AjustesRespaldoProps> = ({
           {productos.map(p => (
             <div
               key={p.id}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-stone-100 bg-stone-50 text-xs"
+              className="flex items-center justify-between p-2.5 rounded-xl border border-neutral-100 bg-neutral-50 text-xs"
             >
               <div className="flex items-center gap-2 truncate">
                 <span>{p.icono || '🍽️'}</span>
-                <span className="font-semibold text-stone-800 truncate">{p.nombre}</span>
+                <span className="font-semibold text-neutral-800 truncate">{p.nombre}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-stone-900">{formatearMoneda(p.precio)}</span>
+                <span className="font-bold text-neutral-900">{formatearMoneda(p.precio)}</span>
                 <button
                   type="button"
                   onClick={() => eliminarPlato(p.id)}
-                  className="text-stone-300 hover:text-red-500 p-1"
+                  className="text-neutral-400 hover:text-red-500 p-1"
                 >
                   <Trash2 size={13} />
                 </button>

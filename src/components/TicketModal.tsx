@@ -72,13 +72,13 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
         </button>
 
         {/* Cabecera del ticket estilo papel de comida */}
-        <div className="text-center pb-4 border-b border-dashed border-stone-300">
-          <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-2">
+        <div className="text-center pb-4 border-b border-dashed border-neutral-300">
+          <div className="w-10 h-10 bg-neutral-950 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-2">
             <Receipt size={22} />
           </div>
-          <h3 className="font-extrabold text-stone-900 text-base">Comida Casera Mayeli</h3>
-          <p className="text-xs text-stone-500">Ticket de Venta #{venta.id.slice(-6).toUpperCase()}</p>
-          <p className="text-[11px] text-stone-400 mt-0.5">
+          <h3 className="font-extrabold text-neutral-900 text-base">Comida Casera Mayeli</h3>
+          <p className="text-xs text-neutral-500">Ticket de Venta #{venta.id.slice(-6).toUpperCase()}</p>
+          <p className="text-[11px] text-neutral-400 mt-0.5">
             {formatearFecha(venta.fecha)} • {formatearHora(venta.fecha)} hs
           </p>
         </div>
@@ -88,13 +88,13 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
           {venta.items.map((item, idx) => (
             <div key={idx} className="flex justify-between items-start text-xs">
               <div className="pr-2">
-                <span className="font-bold text-stone-800">{item.cantidad}x </span>
-                <span className="text-stone-700">{item.nombre}</span>
-                <span className="text-[10px] text-stone-400 block">
+                <span className="font-bold text-neutral-800">{item.cantidad}x </span>
+                <span className="text-neutral-700">{item.nombre}</span>
+                <span className="text-[10px] text-neutral-400 block">
                   a {formatearMoneda(item.precioUnitario)} c/u
                 </span>
               </div>
-              <span className="font-bold text-stone-900 whitespace-nowrap">
+              <span className="font-bold text-neutral-900 whitespace-nowrap">
                 {formatearMoneda(item.subtotal)}
               </span>
             </div>
@@ -102,26 +102,28 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
         </div>
 
         {/* Totales y Método de Pago */}
-        <div className="pt-3 border-t border-dashed border-stone-300 space-y-1.5 text-xs">
-          <div className="flex justify-between items-center text-sm font-extrabold text-stone-900">
+        <div className="pt-3 border-t border-dashed border-neutral-300 space-y-1.5 text-xs">
+          <div className="flex justify-between items-center text-sm font-extrabold text-neutral-900">
             <span>TOTAL COBRADO</span>
-            <span className="text-orange-600 text-base">{formatearMoneda(venta.total)}</span>
+            <span className="text-purple-700 text-base font-black">{formatearMoneda(venta.total)}</span>
           </div>
 
-          <div className="flex justify-between text-stone-600 text-[11px]">
+          <div className="flex justify-between text-neutral-600 text-[11px]">
             <span>Forma de Pago:</span>
-            <span className="font-semibold uppercase text-stone-800">{venta.metodoPago}</span>
+            <span className="font-bold uppercase text-purple-900 bg-purple-100 px-2 py-0.5 rounded">
+              Efectivo
+            </span>
           </div>
 
           {venta.montoRecibido !== undefined && venta.montoRecibido > 0 && (
-            <div className="flex justify-between text-stone-600 text-[11px]">
+            <div className="flex justify-between text-neutral-600 text-[11px]">
               <span>Recibido: {formatearMoneda(venta.montoRecibido)}</span>
-              <span className="text-emerald-700 font-bold">Vuelto: {formatearMoneda(venta.vuelto || 0)}</span>
+              <span className="text-purple-800 font-bold">Vuelto: {formatearMoneda(venta.vuelto || 0)}</span>
             </div>
           )}
 
           {venta.clienteONota && (
-            <div className="mt-2 bg-amber-50 p-2 rounded-lg text-amber-900 text-[11px]">
+            <div className="mt-2 bg-purple-50 p-2 rounded-lg text-purple-950 text-[11px] border border-purple-100">
               <span className="font-bold">Nota/Cliente: </span>
               {venta.clienteONota}
             </div>
@@ -138,17 +140,17 @@ export const TicketModal: React.FC<TicketModalProps> = ({ venta, alCerrar }) => 
         <div className="grid grid-cols-2 gap-2 mt-5">
           <button
             onClick={copiarAlPortapapeles}
-            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-stone-200 text-stone-700 font-bold text-xs bg-stone-50 active:bg-stone-100"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-neutral-300 text-neutral-800 font-bold text-xs bg-neutral-50 active:bg-neutral-100"
           >
-            {copiado ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+            {copiado ? <Check size={14} className="text-purple-700" /> : <Copy size={14} />}
             <span>{copiado ? '¡Copiado!' : 'Copiar'}</span>
           </button>
 
           <button
             onClick={compartirWhatsApp}
-            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-white font-bold text-xs bg-emerald-600 active:bg-emerald-700 shadow-xs"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-white font-bold text-xs bg-neutral-950 hover:bg-black active:scale-[0.98] border border-purple-800/80 shadow-xs"
           >
-            <Share2 size={14} />
+            <Share2 size={14} className="text-purple-400" />
             <span>WhatsApp</span>
           </button>
         </div>

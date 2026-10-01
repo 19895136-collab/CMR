@@ -82,33 +82,33 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-100/70 text-stone-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-neutral-100 text-neutral-900 flex flex-col font-sans">
       {/* -------------------- ENCABEZADO SUPERIOR MÓVIL -------------------- */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200/80 px-4 py-3 shadow-xs">
+      <header className="sticky top-0 z-40 bg-neutral-950 text-white border-b border-purple-950 px-4 py-3 shadow-md">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center shadow-sm shadow-orange-500/20">
-              <ChefHat size={22} />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 to-neutral-900 border border-purple-500/40 text-white flex items-center justify-center shadow-sm">
+              <ChefHat size={22} className="text-purple-300" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="font-extrabold text-stone-900 text-base tracking-tight leading-none">
+                <h1 className="font-extrabold text-white text-base tracking-tight leading-none">
                   CMR • Mayeli
                 </h1>
-                <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">
-                  Comida
+                <span className="text-[10px] font-bold bg-purple-900/80 text-purple-200 border border-purple-700/60 px-1.5 py-0.5 rounded-full">
+                  Efectivo
                 </span>
               </div>
-              <p className="text-[11px] text-stone-500 mt-0.5">Control de Ventas de Barrio</p>
+              <p className="text-[11px] text-neutral-400 mt-0.5">Control de Ventas de Barrio</p>
             </div>
           </div>
 
           {/* Badge informativo de ventas del día */}
           <div className="text-right">
-            <span className="text-[10px] font-semibold text-stone-500 block uppercase tracking-wider">
-              Hoy
+            <span className="text-[10px] font-semibold text-neutral-400 block uppercase tracking-wider">
+              Hoy en Caja
             </span>
-            <span className="text-xs sm:text-sm font-extrabold text-emerald-600 block">
+            <span className="text-xs sm:text-sm font-extrabold text-purple-300 block">
               {formatearMoneda(totalHoy)}
             </span>
           </div>
@@ -161,15 +161,15 @@ export default function App() {
       </main>
 
       {/* -------------------- BARRA DE NAVEGACIÓN INFERIOR (MOBILE FIRST) -------------------- */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-stone-200/90 py-1.5 px-3">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/95 backdrop-blur-lg border-t border-purple-950/80 py-1.5 px-3 shadow-lg">
         <div className="max-w-xl mx-auto flex items-center justify-around">
           {/* TAB 1: RESUMEN */}
           <button
             onClick={() => setTabActivo('resumen')}
             className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all ${
               tabActivo === 'resumen'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-400 hover:text-stone-700 font-medium'
+                ? 'text-purple-400 font-bold scale-105'
+                : 'text-neutral-400 hover:text-neutral-200 font-medium'
             }`}
           >
             <BarChart3 size={20} />
@@ -181,14 +181,14 @@ export default function App() {
             onClick={() => setTabActivo('vender')}
             className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all ${
               tabActivo === 'vender'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-500 hover:text-stone-800 font-medium'
+                ? 'text-purple-400 font-bold scale-105'
+                : 'text-neutral-300 hover:text-white font-medium'
             }`}
           >
             <div className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all ${
               tabActivo === 'vender'
-                ? 'bg-orange-500 text-white scale-110 shadow-orange-500/30'
-                : 'bg-stone-900 text-amber-400'
+                ? 'bg-purple-600 text-white scale-110 shadow-purple-600/40 border border-purple-400'
+                : 'bg-neutral-800 text-purple-400 border border-neutral-700'
             }`}>
               <PlusCircle size={22} />
             </div>
@@ -200,14 +200,14 @@ export default function App() {
             onClick={() => setTabActivo('control')}
             className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all relative ${
               tabActivo === 'control'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-400 hover:text-stone-700 font-medium'
+                ? 'text-purple-400 font-bold scale-105'
+                : 'text-neutral-400 hover:text-neutral-200 font-medium'
             }`}
           >
             <History size={20} />
             <span className="text-[10px] mt-1">Historial</span>
             {ventas.length > 0 && (
-              <span className="absolute top-1 right-2 w-2 h-2 bg-orange-500 rounded-full" />
+              <span className="absolute top-1 right-2 w-2 h-2 bg-purple-500 rounded-full" />
             )}
           </button>
 
@@ -216,8 +216,8 @@ export default function App() {
             onClick={() => setTabActivo('respaldo')}
             className={`flex flex-col items-center py-1 px-3 rounded-2xl transition-all ${
               tabActivo === 'respaldo'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-400 hover:text-stone-700 font-medium'
+                ? 'text-purple-400 font-bold scale-105'
+                : 'text-neutral-400 hover:text-neutral-200 font-medium'
             }`}
           >
             <ShieldCheck size={20} />

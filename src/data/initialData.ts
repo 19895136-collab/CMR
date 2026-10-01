@@ -68,7 +68,9 @@ export function generarVentasEjemplo(): Venta[] {
         { id: 'prod_9', nombre: 'Flan Casero con Caramelo', precioUnitario: 45, cantidad: 1, subtotal: 45 }
       ],
       total: 205,
-      metodoPago: 'transferencia',
+      metodoPago: 'efectivo',
+      montoRecibido: 300,
+      vuelto: 95,
       clienteONota: 'Para llevar Don Ramón',
       estado: 'completada',
       creadaEn: crearFechaRelativa(0, 2, 40).getTime()
@@ -96,7 +98,9 @@ export function generarVentasEjemplo(): Venta[] {
         { id: 'prod_7', nombre: 'Refresco / Gaseosa 500ml', precioUnitario: 35, cantidad: 2, subtotal: 70 }
       ],
       total: 290,
-      metodoPago: 'tarjeta',
+      metodoPago: 'efectivo',
+      montoRecibido: 300,
+      vuelto: 10,
       clienteONota: 'Pedido telefónico - Retirado',
       estado: 'completada',
       creadaEn: crearFechaRelativa(0, 4, 25).getTime()
@@ -111,7 +115,9 @@ export function generarVentasEjemplo(): Venta[] {
         { id: 'prod_8', nombre: 'Agua de Sabor Natural 1L', precioUnitario: 40, cantidad: 2, subtotal: 80 }
       ],
       total: 440,
-      metodoPago: 'transferencia',
+      metodoPago: 'efectivo',
+      montoRecibido: 500,
+      vuelto: 60,
       clienteONota: 'Familia Gómez',
       estado: 'completada',
       creadaEn: crearFechaRelativa(1, 2, 0).getTime()
@@ -155,7 +161,9 @@ export function generarVentasEjemplo(): Venta[] {
         { id: 'prod_7', nombre: 'Refresco / Gaseosa 500ml', precioUnitario: 35, cantidad: 2, subtotal: 70 }
       ],
       total: 350,
-      metodoPago: 'transferencia',
+      metodoPago: 'efectivo',
+      montoRecibido: 400,
+      vuelto: 50,
       clienteONota: 'Mesa 3',
       estado: 'completada',
       creadaEn: crearFechaRelativa(2, 3, 0).getTime()
@@ -199,7 +207,9 @@ export function generarVentasEjemplo(): Venta[] {
         { id: 'prod_7', nombre: 'Refresco / Gaseosa 500ml', precioUnitario: 35, cantidad: 4, subtotal: 140 }
       ],
       total: 620,
-      metodoPago: 'tarjeta',
+      metodoPago: 'efectivo',
+      montoRecibido: 700,
+      vuelto: 80,
       clienteONota: 'Taller mecánico de enfrente',
       estado: 'completada',
       creadaEn: crearFechaRelativa(4, 2, 30).getTime()
@@ -213,7 +223,7 @@ export function generarVentasEjemplo(): Venta[] {
         { id: 'prod_5', nombre: 'Tacos / Quesadillas (x3)', precioUnitario: 110, cantidad: 3, subtotal: 330 }
       ],
       total: 330,
-      metodoPago: 'transferencia',
+      metodoPago: 'efectivo',
       clienteONota: 'Pedidos delivery',
       estado: 'completada',
       creadaEn: crearFechaRelativa(5, 5, 0).getTime()
@@ -225,7 +235,7 @@ export function generarVentasEjemplo(): Venta[] {
       fecha: crearFechaRelativa(6, 3, 0).toISOString(),
       items: [
         { id: 'prod_2', nombre: 'Milanesa con Guarnición', precioUnitario: 140, cantidad: 2, subtotal: 280 },
-        { id: 'prod_9', nombre: 'Flan Casero con Caramelo', precioUnitario: 45, cantidad: 2, subtotal: 90 }
+        { id: 'prod_9', nombre: 'Flan Casero con Caramelo', precioUnitario: 45, cantidad: 1, subtotal: 90 }
       ],
       total: 370,
       metodoPago: 'efectivo',
